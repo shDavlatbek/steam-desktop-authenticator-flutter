@@ -1,0 +1,120 @@
+{
+  "version": 1,
+  "skills": {
+    "flutter-adding-home-screen-widgets": {
+      "source": "flutter/skills",
+      "sourceType": "github",
+      "computedHash": "49b66b1756a171a8b3fbde1aeb46baaa49e9eb26ea03b7b7ccc20e415a199edd"
+    },
+    "flutter-animating-apps": {
+      "source": "flutter/skills",
+      "sourceType": "github",
+      "computedHash": "df4443b32d5d2f266a3fd4f58e4bff44f6ed6264df723a904d5ef3108785db18"
+    },
+    "flutter-architecting-apps": {
+      "source": "flutter/skills",
+      "sourceType": "github",
+      "computedHash": "5e45577e7ad0ebd27eaa20b0f006967cdc71d420b5f2c7ea9e8db860a07d0802"
+    },
+    "flutter-building-forms": {
+      "source": "flutter/skills",
+      "sourceType": "github",
+      "computedHash": "363351d962bf4445d1d411b80aabfcb3547cd4a32dbfb4ee159d3420c3f357e4"
+    },
+    "flutter-building-layouts": {
+      "source": "flutter/skills",
+      "sourceType": "github",
+      "computedHash": "1010c7fbc41061aa1c7d215cbea36cb9ffbb851bd33aea2e4175f74215e7b602"
+    },
+    "flutter-building-plugins": {
+      "source": "flutter/skills",
+      "sourceType": "github",
+      "computedHash": "2a5b9f197c235762551ea9368f1f0760caf4b82c397581b9b3c983cba119fc29"
+    },
+    "flutter-caching-data": {
+      "source": "flutter/skills",
+      "sourceType": "github",
+      "computedHash": "0369bd369995eebbb3024859b27aebd48612935517b68d762e27ec24cf32f27b"
+    },
+    "flutter-embedding-native-views": {
+      "source": "flutter/skills",
+      "sourceType": "github",
+      "computedHash": "60ef6b46b3e21f8cf348eff44c31d9690b957b63f6e55e194a79f5e90b790093"
+    },
+    "flutter-handling-concurrency": {
+      "source": "flutter/skills",
+      "sourceType": "github",
+      "computedHash": "5dc5b1c8d8dfe65b60c0f8fb3cdd4d686b2a2e4db0ebbed730a82095b72212dd"
+    },
+    "flutter-handling-http-and-json": {
+      "source": "flutter/skills",
+      "sourceType": "github",
+      "computedHash": "6498a5ad946308535693782f6758bed1968ca68de67e0b972778c9b27df72ea0"
+    },
+    "flutter-implementing-navigation-and-routing": {
+      "source": "flutter/skills",
+      "sourceType": "github",
+      "computedHash": "7247406b26de6e3711bc654c8c1e09fb1abf21b8fc465174cef4ffb563726d3f"
+    },
+    "flutter-improving-accessibility": {
+      "source": "flutter/skills",
+      "sourceType": "github",
+      "computedHash": "e66e7dcdb051e4ce4d025933c7585a043b94f55ef042a9f82baee1a9a8e2163b"
+    },
+    "flutter-interoperating-with-native-apis": {
+      "source": "flutter/skills",
+      "sourceType": "github",
+      "computedHash": "ca59ba313f0e0dffa5ab7622cf308af641e9450ebb6adf26ce91569d42315bf5"
+    },
+    "flutter-localizing-apps": {
+      "source": "flutter/skills",
+      "sourceType": "github",
+      "computedHash": "b6ab528e59ce5fc2a1475ae61cf5a223455f7e58881dd5a166447ad4e8a81617"
+    },
+    "flutter-managing-state": {
+      "source": "flutter/skills",
+      "sourceType": "github",
+      "computedHash": "70a4099bf10906fa4e2c519b9408fea0776dca956c8bf833bf6b452022bade46"
+    },
+    "flutter-reducing-app-size": {
+      "source": "flutter/skills",
+      "sourceType": "github",
+      "computedHash": "1501a6fe105eddf805139d5ff167c1ab4992dc69e6dd1bd2c8eaba4732a8e70c"
+    },
+    "flutter-setting-up-on-linux": {
+      "source": "flutter/skills",
+      "sourceType": "github",
+      "computedHash": "5541ffef22796d68081b670ecab43497716599d73469e5b469a85e89d873d2b1"
+    },
+    "flutter-setting-up-on-macos": {
+      "source": "flutter/skills",
+      "sourceType": "github",
+      "computedHash": "ae8d8f9efd4ff7ff00eb4cfaab4309c991dce06522cf1d6f01f101d9be777b58"
+    },
+    "flutter-setting-up-on-windows": {
+      "source": "flutter/skills",
+      "sourceType": "github",
+      "computedHash": "1c34823d16172ae975d69a8c40bebd23dbe7d31487c46a220a625cacd43b70af"
+    },
+    "flutter-testing-apps": {
+      "source": "flutter/skills",
+      "sourceType": "github",
+      "computedHash": "0c45c74285a0f0241189b4d383026b52ad4bb84d0be8424ca2c5a77d8cb768d5"
+    },
+    "flutter-theming-apps": {
+      "source": "flutter/skills",
+      "sourceType": "github",
+      "computedHash": "03f05d2aaad597d1a74c2e82d127088a5a822da79e00e3e77dd65449c9db7f7b"
+    },
+    "flutter-working-with-databases": {
+      "source": "flutter/skills",
+      "sourceType": "github",
+      "computedHash": "9d404abc6315c0a02afbbbdb44426344ca2127c3d6bc2b5f84cd0f237d2a0e7c"
+    },
+    "skill-creator": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "computedHash": "57f470f512f45bdac598e302bc72fd62bf2b649fc7fad032efe97720149cde4d"
+    }
+  }
+}
