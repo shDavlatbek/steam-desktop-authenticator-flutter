@@ -1,6 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import '../../../features/auth/view_models/login_view_model.dart';
+import '../../../features/auth/views/login_page.dart';
+import '../../../features/confirmations/views/confirmation_page.dart';
+import '../../../features/encryption/views/encryption_setup_page.dart';
+import '../../../features/import_export/views/import_page.dart';
+import '../../../features/settings/views/settings_page.dart';
 import '../../../shared/theme/colors.dart';
 import '../view_models/home_view_model.dart';
 import 'account_list_widget.dart';
@@ -235,10 +242,16 @@ class _HomePageState extends State<HomePage> {
   ) {
     switch (action) {
       case 'login_again':
-        // TODO: Navigate to login flow for current account.
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Login Again - not yet implemented')),
-        );
+        if (vm.currentAccount == null) return;
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => LoginPage(
+              loginType: LoginType.refresh,
+              account: vm.currentAccount,
+            ),
+          ),
+        ).then((_) => vm.loadAccounts());
         break;
 
       case 'remove':
@@ -258,48 +271,47 @@ class _HomePageState extends State<HomePage> {
   ) {
     switch (action) {
       case 'import':
-        // TODO: Navigate to import screen.
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Import Account - not yet implemented')),
-        );
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const ImportPage()),
+        ).then((_) => vm.loadAccounts());
         break;
 
       case 'settings':
-        // TODO: Navigate to settings screen.
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Settings - not yet implemented')),
-        );
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const SettingsPage()),
+        ).then((_) => vm.initialize());
         break;
 
       case 'quit':
-        // TODO: Implement proper app exit (window_manager close).
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Quit - not yet implemented')),
-        );
+        SystemNavigator.pop();
         break;
 
       case 'add':
-        // TODO: Navigate to add-account / setup flow.
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Add Account - not yet implemented')),
-        );
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const LoginPage(loginType: LoginType.initial),
+          ),
+        ).then((_) => vm.loadAccounts());
         break;
 
       case 'confirmations':
-        // TODO: Navigate to confirmations screen for current account.
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Confirmations - not yet implemented')),
+        if (vm.currentAccount == null) return;
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ConfirmationPage(account: vm.currentAccount!),
+          ),
         );
         break;
 
       case 'encryption':
-        // TODO: Navigate to encryption management screen.
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Manage Encryption - not yet implemented')),
-        );
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const EncryptionSetupPage()),
+        ).then((_) => vm.loadAccounts());
         break;
     }
   }
