@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../../../core/repositories/manifest_repository.dart';
+import '../../../core/services/debug_logger.dart';
 
 /// Manages the application-wide settings stored in the manifest.
 class SettingsViewModel extends ChangeNotifier {
@@ -14,6 +15,7 @@ class SettingsViewModel extends ChangeNotifier {
   bool checkAllAccounts = false;
   bool autoConfirmMarketTransactions = false;
   bool autoConfirmTrades = false;
+  bool debugMode = false;
 
   bool isLoading = false;
   bool isSaving = false;
@@ -32,6 +34,8 @@ class SettingsViewModel extends ChangeNotifier {
       checkAllAccounts = manifest.checkAllAccounts;
       autoConfirmMarketTransactions = manifest.autoConfirmMarketTransactions;
       autoConfirmTrades = manifest.autoConfirmTrades;
+      debugMode = manifest.debugMode;
+      DebugLogger().setEnabled(debugMode);
     } catch (e) {
       errorMessage = e.toString();
     }
@@ -52,6 +56,7 @@ class SettingsViewModel extends ChangeNotifier {
       manifest.checkAllAccounts = checkAllAccounts;
       manifest.autoConfirmMarketTransactions = autoConfirmMarketTransactions;
       manifest.autoConfirmTrades = autoConfirmTrades;
+      manifest.debugMode = debugMode;
       final saved = await _manifestRepo.save();
       if (saved) {
         successMessage = 'Settings saved successfully.';
@@ -89,6 +94,12 @@ class SettingsViewModel extends ChangeNotifier {
 
   void setAutoConfirmTrades(bool value) {
     autoConfirmTrades = value;
+    notifyListeners();
+  }
+
+  void setDebugMode(bool value) {
+    debugMode = value;
+    DebugLogger().setEnabled(value);
     notifyListeners();
   }
 }

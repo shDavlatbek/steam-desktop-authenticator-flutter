@@ -1,4 +1,5 @@
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -6,6 +7,9 @@ import '../../../core/repositories/manifest_repository.dart';
 import '../../../shared/theme/colors.dart';
 import '../../../shared/widgets/loading_overlay.dart';
 import '../view_models/import_view_model.dart';
+
+bool get _isAndroid =>
+    !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
 
 /// Page for importing .maFile account files, either individually or from
 /// an existing SDA directory.
@@ -105,13 +109,15 @@ class _ImportPageState extends State<ImportPage> {
                       ),
                       const SizedBox(height: 24),
 
-                      // ── Import from directory ──────────────────────
-                      _sectionHeader('Import from Directory'),
+                      // ── Import from directory / multi-pick ─────────
+                      _sectionHeader('Import Multiple Files'),
                       const SizedBox(height: 8),
-                      const Text(
-                        'Select an existing SDA maFiles directory to import '
-                        'all account files at once.',
-                        style: TextStyle(
+                      Text(
+                        _isAndroid
+                            ? 'Select multiple .maFile files to import at once.'
+                            : 'Select an existing SDA maFiles directory to import '
+                                'all account files at once.',
+                        style: const TextStyle(
                           color: SteamColors.textSecondary,
                           fontSize: 13,
                         ),
@@ -120,10 +126,17 @@ class _ImportPageState extends State<ImportPage> {
                       SizedBox(
                         width: double.infinity,
                         child: OutlinedButton.icon(
-                          onPressed:
-                              vm.isImporting ? null : _pickAndImportDirectory,
-                          icon: const Icon(Icons.folder_open, size: 18),
-                          label: const Text('Select Directory'),
+                          onPressed: vm.isImporting
+                              ? null
+                              : _isAndroid
+                                  ? () => vm.importFromMultiPick()
+                                  : _pickAndImportDirectory,
+                          icon: Icon(
+                            _isAndroid ? Icons.file_copy : Icons.folder_open,
+                            size: 18,
+                          ),
+                          label: Text(
+                              _isAndroid ? 'Select Files' : 'Select Directory'),
                         ),
                       ),
 

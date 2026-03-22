@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'core/repositories/account_repository.dart';
 import 'core/repositories/confirmation_repository.dart';
 import 'core/repositories/manifest_repository.dart';
+import 'core/services/debug_logger.dart';
 import 'features/home/view_models/home_view_model.dart';
 import 'features/home/views/home_page.dart';
 import 'features/import_export/views/welcome_page.dart';
@@ -49,6 +50,7 @@ class _AppShellState extends State<AppShell> {
     try {
       final manifestRepo = context.read<ManifestRepository>();
       final manifest = await manifestRepo.getManifest();
+      DebugLogger().setEnabled(manifest.debugMode);
 
       setState(() {
         _isFirstRun = manifest.firstRun && manifest.entries.isEmpty;

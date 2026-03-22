@@ -39,6 +39,7 @@ class Manifest {
   bool checkAllAccounts;
   bool autoConfirmMarketTransactions;
   bool autoConfirmTrades;
+  bool debugMode;
 
   Manifest({
     this.encrypted = false,
@@ -49,6 +50,7 @@ class Manifest {
     this.checkAllAccounts = false,
     this.autoConfirmMarketTransactions = false,
     this.autoConfirmTrades = false,
+    this.debugMode = false,
   }) : entries = entries ?? [];
 
   factory Manifest.fromJson(Map<String, dynamic> json) {
@@ -67,6 +69,7 @@ class Manifest {
       autoConfirmMarketTransactions:
           json['auto_confirm_market_transactions'] as bool? ?? false,
       autoConfirmTrades: json['auto_confirm_trades'] as bool? ?? false,
+      debugMode: json['debug_mode'] as bool? ?? false,
     );
   }
 
@@ -80,6 +83,7 @@ class Manifest {
       'periodic_checking_checkall': checkAllAccounts,
       'auto_confirm_market_transactions': autoConfirmMarketTransactions,
       'auto_confirm_trades': autoConfirmTrades,
+      'debug_mode': debugMode,
     };
   }
 }

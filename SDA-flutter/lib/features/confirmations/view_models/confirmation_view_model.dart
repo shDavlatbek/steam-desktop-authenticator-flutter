@@ -3,11 +3,13 @@ import 'package:flutter/foundation.dart';
 import '../../../core/models/confirmation.dart';
 import '../../../core/models/steam_guard_account.dart';
 import '../../../core/repositories/confirmation_repository.dart';
+import '../../../core/services/debug_logger.dart';
 
 /// Manages the state for fetching and acting on Steam trade/market
 /// confirmations.
 class ConfirmationViewModel extends ChangeNotifier {
   final ConfirmationRepository _confirmationRepo;
+  final DebugLogger _log = DebugLogger();
 
   ConfirmationViewModel({required ConfirmationRepository confirmationRepo})
       : _confirmationRepo = confirmationRepo;
@@ -17,9 +19,9 @@ class ConfirmationViewModel extends ChangeNotifier {
   String? errorMessage;
 
   /// The set of confirmation IDs currently being processed (accept/deny).
-  final Set<int> _processingIds = {};
+  final Set<String> _processingIds = {};
 
-  bool isProcessing(int confirmationId) =>
+  bool isProcessing(String confirmationId) =>
       _processingIds.contains(confirmationId);
 
   /// Fetches all pending confirmations for [account].
@@ -29,8 +31,11 @@ class ConfirmationViewModel extends ChangeNotifier {
     notifyListeners();
     try {
       confirmations = await _confirmationRepo.fetchConfirmations(account);
-    } catch (e) {
+      _log.info('ConfirmationVM',
+          'Loaded ${confirmations.length} confirmations');
+    } catch (e, st) {
       errorMessage = e.toString();
+      _log.error('ConfirmationVM', 'Load failed: $e', detail: st.toString());
     }
     isLoading = false;
     notifyListeners();
@@ -45,9 +50,12 @@ class ConfirmationViewModel extends ChangeNotifier {
     notifyListeners();
     try {
       await _confirmationRepo.acceptConfirmation(account, conf);
+      _log.info('ConfirmationVM', 'Accepted confirmation ${conf.id}');
       await loadConfirmations(account);
-    } catch (e) {
+    } catch (e, st) {
       errorMessage = e.toString();
+      _log.error('ConfirmationVM', 'Accept failed: $e',
+          detail: st.toString());
       _processingIds.remove(conf.id);
       notifyListeners();
     }
@@ -62,9 +70,12 @@ class ConfirmationViewModel extends ChangeNotifier {
     notifyListeners();
     try {
       await _confirmationRepo.denyConfirmation(account, conf);
+      _log.info('ConfirmationVM', 'Denied confirmation ${conf.id}');
       await loadConfirmations(account);
-    } catch (e) {
+    } catch (e, st) {
       errorMessage = e.toString();
+      _log.error('ConfirmationVM', 'Deny failed: $e',
+          detail: st.toString());
       _processingIds.remove(conf.id);
       notifyListeners();
     }

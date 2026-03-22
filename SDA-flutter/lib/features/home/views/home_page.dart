@@ -106,6 +106,11 @@ class _HomePageState extends State<HomePage> {
               value: 'settings',
               child: _MenuRow(icon: Icons.settings_outlined, label: 'Settings'),
             ),
+            const PopupMenuItem(
+              value: 'encryption',
+              child:
+                  _MenuRow(icon: Icons.lock_outline, label: 'Manage Encryption'),
+            ),
             const PopupMenuDivider(),
             const PopupMenuItem(
               value: 'quit',
@@ -176,39 +181,54 @@ class _HomePageState extends State<HomePage> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Action buttons.
+          // Action buttons — hide labels on narrow screens.
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => _onGlobalAction(context, vm, 'add'),
-                    icon: const Icon(Icons.add, size: 18),
-                    label: const Text('Add Account'),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: vm.currentAccount != null
-                        ? () =>
-                            _onGlobalAction(context, vm, 'confirmations')
-                        : null,
-                    icon: const Icon(Icons.check_circle_outline, size: 18),
-                    label: const Text('Confirmations'),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () =>
-                        _onGlobalAction(context, vm, 'encryption'),
-                    icon: const Icon(Icons.lock_outline, size: 18),
-                    label: const Text('Encryption'),
-                  ),
-                ),
-              ],
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final compact = constraints.maxWidth < 400;
+                return Row(
+                  children: [
+                    Expanded(
+                      child: compact
+                          ? IconButton(
+                              onPressed: () =>
+                                  _onGlobalAction(context, vm, 'add'),
+                              icon: const Icon(Icons.add),
+                              tooltip: 'Add Account',
+                            )
+                          : OutlinedButton.icon(
+                              onPressed: () =>
+                                  _onGlobalAction(context, vm, 'add'),
+                              icon: const Icon(Icons.add, size: 18),
+                              label: const Text('Add Account'),
+                            ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: compact
+                          ? IconButton(
+                              onPressed: vm.currentAccount != null
+                                  ? () => _onGlobalAction(
+                                      context, vm, 'confirmations')
+                                  : null,
+                              icon: const Icon(Icons.check_circle_outline),
+                              tooltip: 'Confirmations',
+                            )
+                          : OutlinedButton.icon(
+                              onPressed: vm.currentAccount != null
+                                  ? () => _onGlobalAction(
+                                      context, vm, 'confirmations')
+                                  : null,
+                              icon: const Icon(
+                                  Icons.check_circle_outline,
+                                  size: 18),
+                              label: const Text('Confirmations'),
+                            ),
+                    ),
+                  ],
+                );
+              },
             ),
           ),
 

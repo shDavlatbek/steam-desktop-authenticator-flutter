@@ -33,8 +33,8 @@ class SteamConfirmationService {
   /// Returns `true` if the operation succeeded.
   static Future<bool> sendConfirmationAjax(
     SteamWebService web,
-    int confId,
-    int confKey,
+    String confId,
+    String confKey,
     String op,
     String queryParams,
     Map<String, String> cookies,
@@ -56,7 +56,7 @@ class SteamConfirmationService {
   /// Returns `true` if the operation succeeded.
   static Future<bool> sendMultiConfirmationAjax(
     SteamWebService web,
-    List<Map<String, int>> confs,
+    List<Map<String, String>> confs,
     String op,
     String queryParams,
     Map<String, String> cookies,

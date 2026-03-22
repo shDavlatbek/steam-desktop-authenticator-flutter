@@ -20,9 +20,13 @@ enum EMobileConfirmationType {
 }
 
 class Confirmation {
-  int id;
-  int key;
-  int creator;
+  /// Steam returns id, nonce, creator_id as strings in the JSON response.
+  /// We store them as strings to avoid overflow issues with large uint64 values
+  /// (e.g. nonce "4970084111863341325") and because they are only used as
+  /// opaque identifiers in URL query parameters.
+  String id;
+  String key;
+  String creator;
   String? headline;
   List<String>? summary;
   String? accept;
@@ -31,9 +35,9 @@ class Confirmation {
   int confType;
 
   Confirmation({
-    this.id = 0,
-    this.key = 0,
-    this.creator = 0,
+    this.id = '0',
+    this.key = '0',
+    this.creator = '0',
     this.headline,
     this.summary,
     this.accept,
@@ -48,18 +52,31 @@ class Confirmation {
 
   factory Confirmation.fromJson(Map<String, dynamic> json) {
     return Confirmation(
-      id: json['id'] as int? ?? 0,
-      key: json['nonce'] as int? ?? 0,
-      creator: json['creator_id'] as int? ?? 0,
+      id: _parseId(json['id']),
+      key: _parseId(json['nonce']),
+      creator: _parseId(json['creator_id']),
       headline: json['headline'] as String?,
       summary: (json['summary'] as List<dynamic>?)
-          ?.map((e) => e as String)
+          ?.map((e) => e.toString())
           .toList(),
       accept: json['accept'] as String?,
       cancel: json['cancel'] as String?,
       icon: json['icon'] as String?,
-      confType: json['type'] as int? ?? 0,
+      confType: _parseInt(json['type']),
     );
+  }
+
+  /// Parse an ID field that may be a String or int from the JSON response.
+  static String _parseId(dynamic value) {
+    if (value == null) return '0';
+    return value.toString();
+  }
+
+  /// Parse an int field that may be a String or int from the JSON response.
+  static int _parseInt(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    return int.tryParse(value.toString()) ?? 0;
   }
 
   Map<String, dynamic> toJson() {

@@ -3,8 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/repositories/manifest_repository.dart';
+import '../../../core/services/debug_logger.dart';
 import '../../../shared/theme/colors.dart';
 import '../view_models/settings_view_model.dart';
+import 'debug_log_page.dart';
 
 /// Settings page that lets the user configure periodic confirmation checking
 /// and auto-confirm behaviour.
@@ -116,6 +118,61 @@ class _SettingsPageState extends State<SettingsPage> {
                       onConfirm: () => vm.setAutoConfirmTrades(val),
                     ),
                   ),
+
+                  const SizedBox(height: 24),
+
+                  // ── Debug section ────────────────────────────────────
+                  _sectionHeader('Debug'),
+                  const SizedBox(height: 8),
+                  _buildSwitchTile(
+                    title: 'Debug mode',
+                    subtitle:
+                        'Log HTTP requests, responses, and internal operations for troubleshooting.',
+                    value: vm.debugMode,
+                    onChanged: vm.setDebugMode,
+                  ),
+                  if (vm.debugMode) ...[
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const DebugLogPage()),
+                        ),
+                        icon: const Icon(Icons.article_outlined, size: 18),
+                        label: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text('View Logs'),
+                            const SizedBox(width: 8),
+                            ListenableBuilder(
+                              listenable: DebugLogger(),
+                              builder: (_, _) {
+                                final count = DebugLogger().entries.length;
+                                if (count == 0) return const SizedBox.shrink();
+                                return Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: SteamColors.steamBlue.withAlpha(40),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Text(
+                                    '$count',
+                                    style: const TextStyle(
+                                        fontSize: 11,
+                                        color: SteamColors.steamBlue),
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
 
                   const SizedBox(height: 32),
 

@@ -1,8 +1,10 @@
 import 'package:http/http.dart' as http;
 import 'package:sda_flutter/core/constants/steam_guard_constants.dart';
+import 'package:sda_flutter/core/services/debug_logger.dart';
 
 class SteamWebService {
   final http.Client _client;
+  final DebugLogger _log = DebugLogger();
 
   SteamWebService({http.Client? client}) : _client = client ?? http.Client();
 
@@ -14,8 +16,18 @@ class SteamWebService {
       headers['Cookie'] =
           cookies.entries.map((e) => '${e.key}=${e.value}').join('; ');
     }
-    final response = await _client.get(Uri.parse(url), headers: headers);
-    return response.body;
+
+    _log.http('SteamWeb', 'GET $url');
+
+    try {
+      final response = await _client.get(Uri.parse(url), headers: headers);
+      _log.http('SteamWeb', 'GET ${response.statusCode}',
+          detail: _truncate(response.body));
+      return response.body;
+    } catch (e, st) {
+      _log.error('SteamWeb', 'GET failed: $e', detail: st.toString());
+      rethrow;
+    }
   }
 
   Future<String> postRequest(
@@ -31,13 +43,28 @@ class SteamWebService {
       headers['Cookie'] =
           cookies.entries.map((e) => '${e.key}=${e.value}').join('; ');
     }
-    final response = await _client.post(
-      Uri.parse(url),
-      headers: headers,
-      body: body ?? <String, String>{},
-    );
-    return response.body;
+
+    _log.http('SteamWeb', 'POST $url',
+        detail: body != null ? 'Body keys: ${body.keys.join(', ')}' : null);
+
+    try {
+      final response = await _client.post(
+        Uri.parse(url),
+        headers: headers,
+        body: body ?? <String, String>{},
+      );
+      _log.http('SteamWeb', 'POST ${response.statusCode}',
+          detail: _truncate(response.body));
+      return response.body;
+    } catch (e, st) {
+      _log.error('SteamWeb', 'POST failed: $e', detail: st.toString());
+      rethrow;
+    }
   }
+
+  /// Truncate response body for logging to avoid flooding memory.
+  String _truncate(String s, [int max = 2000]) =>
+      s.length > max ? '${s.substring(0, max)}...[truncated]' : s;
 
   void dispose() => _client.close();
 }

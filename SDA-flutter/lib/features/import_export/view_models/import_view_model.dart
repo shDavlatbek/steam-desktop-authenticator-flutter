@@ -7,6 +7,9 @@ import 'package:flutter/foundation.dart';
 import '../../../core/models/steam_guard_account.dart';
 import '../../../core/repositories/manifest_repository.dart';
 
+bool get _isAndroid =>
+    !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+
 /// Handles importing .maFile account files into the manifest.
 class ImportViewModel extends ChangeNotifier {
   final ManifestRepository _manifestRepo;
@@ -30,9 +33,11 @@ class ImportViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
+      // Android doesn't support custom extensions like 'maFile' — use any type
+      // and filter manually.
       final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['maFile'],
+        type: _isAndroid ? FileType.any : FileType.custom,
+        allowedExtensions: _isAndroid ? null : ['maFile'],
         dialogTitle: 'Select .maFile to import',
       );
 
@@ -43,6 +48,24 @@ class ImportViewModel extends ChangeNotifier {
       }
 
       final filePath = result.files.single.path!;
+
+      // On Android with FileType.any the user could pick anything — sanity
+      // check that the file content looks like JSON before importing.
+      if (_isAndroid && !filePath.endsWith('.maFile')) {
+        // Still try to import — the file might just have a different name
+        // but valid JSON content.
+        final contents = await File(filePath).readAsString();
+        try {
+          json.decode(contents);
+        } catch (_) {
+          errorMessage =
+              'The selected file does not appear to be a valid .maFile.';
+          isImporting = false;
+          notifyListeners();
+          return;
+        }
+      }
+
       await _importSingleFile(filePath, encryptionKey: encryptionKey);
     } catch (e) {
       errorMessage = e.toString();
@@ -53,6 +76,12 @@ class ImportViewModel extends ChangeNotifier {
   }
 
   /// Scans a directory for `.maFile` files and imports all of them.
+  ///
+  /// On Android, [getDirectoryPath] returns a content URI that `dart:io`
+  /// cannot traverse directly. Instead we use [FilePicker.pickFiles] with
+  /// [allowMultiple] to let the user select the individual maFiles from that
+  /// directory.  The [importFromDirectoryViaMultiPick] helper is used in that
+  /// case, called from the view layer.
   Future<void> importFromDirectory(String path) async {
     isImporting = true;
     errorMessage = null;
@@ -71,7 +100,7 @@ class ImportViewModel extends ChangeNotifier {
       int imported = 0;
       int failed = 0;
 
-      await for (final entity in dir.list()) {
+      await for (final entity in dir.list(recursive: true)) {
         if (entity is File && entity.path.endsWith('.maFile')) {
           try {
             await _importSingleFile(entity.path);
@@ -84,6 +113,59 @@ class ImportViewModel extends ChangeNotifier {
 
       if (imported == 0 && failed == 0) {
         errorMessage = 'No .maFile files found in the selected directory.';
+      } else if (failed > 0) {
+        successMessage =
+            'Imported $imported account(s). $failed file(s) could not be imported.';
+      } else {
+        successMessage = 'Successfully imported $imported account(s).';
+      }
+    } catch (e) {
+      errorMessage = e.toString();
+    }
+
+    isImporting = false;
+    notifyListeners();
+  }
+
+  /// Android-specific: let the user multi-pick files instead of choosing a
+  /// directory (SAF content URIs are not traversable via dart:io).
+  Future<void> importFromMultiPick() async {
+    isImporting = true;
+    errorMessage = null;
+    successMessage = null;
+    notifyListeners();
+
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.any,
+        allowMultiple: true,
+        dialogTitle: 'Select .maFile files to import',
+      );
+
+      if (result == null || result.files.isEmpty) {
+        isImporting = false;
+        notifyListeners();
+        return;
+      }
+
+      int imported = 0;
+      int failed = 0;
+
+      for (final file in result.files) {
+        if (file.path == null) continue;
+        try {
+          // Try reading as JSON to validate
+          final contents = await File(file.path!).readAsString();
+          json.decode(contents); // throws if not valid JSON
+          await _importSingleFile(file.path!);
+          imported++;
+        } catch (_) {
+          failed++;
+        }
+      }
+
+      if (imported == 0 && failed == 0) {
+        errorMessage = 'No valid .maFile files were selected.';
       } else if (failed > 0) {
         successMessage =
             'Imported $imported account(s). $failed file(s) could not be imported.';
