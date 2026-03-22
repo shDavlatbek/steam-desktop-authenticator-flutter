@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/models/steam_guard_account.dart';
 import '../../../features/auth/view_models/login_view_model.dart';
+import '../../../features/auth/views/authenticator_link_page.dart';
 import '../../../features/auth/views/login_page.dart';
 import '../../../features/confirmations/views/confirmation_page.dart';
 import '../../../features/encryption/views/encryption_setup_page.dart';
@@ -303,12 +305,7 @@ class _HomePageState extends State<HomePage> {
         break;
 
       case 'add':
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const LoginPage(loginType: LoginType.initial),
-          ),
-        ).then((_) => vm.loadAccounts());
+        _handleAddAccount(context, vm);
         break;
 
       case 'confirmations':
@@ -401,6 +398,71 @@ class _HomePageState extends State<HomePage> {
     if (confirmed == true && context.mounted) {
       await vm.deactivateAuthenticator(account);
     }
+  }
+
+  Future<void> _handleAddAccount(
+    BuildContext context,
+    HomeViewModel vm,
+  ) async {
+    // Step 1: Login
+    final session = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const LoginPage(loginType: LoginType.initial),
+      ),
+    );
+    if (session == null || !context.mounted) {
+      await vm.loadAccounts();
+      return;
+    }
+
+    // Step 2: Ask if user wants to add authenticator
+    final addAuth = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Add Authenticator?'),
+        content: const Text(
+          'Would you like to add Steam Guard to this account?\n\n'
+          'If the account already has an authenticator from another '
+          'device, choose "No" to just save the login.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('No'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Yes, Add Authenticator'),
+          ),
+        ],
+      ),
+    );
+
+    if (!context.mounted) return;
+
+    if (addAuth == true) {
+      // Step 3: Authenticator linking flow
+      final linkedAccount = await Navigator.push<SteamGuardAccount>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => AuthenticatorLinkPage(session: session),
+        ),
+      );
+
+      if (linkedAccount != null && context.mounted) {
+        await vm.manifestRepo.saveAccount(linkedAccount);
+      }
+    } else if (addAuth == false) {
+      // Just save the session as a bare account
+      final newAccount = SteamGuardAccount(
+        session: session,
+        accountName: session.steamID.toString(),
+      );
+      await vm.manifestRepo.saveAccount(newAccount);
+    }
+
+    await vm.loadAccounts();
   }
 }
 
