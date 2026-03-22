@@ -97,6 +97,13 @@ class _HomePageState extends State<HomePage> {
           onSelected: (value) => _onGlobalAction(context, vm, value),
           itemBuilder: (_) => [
             const PopupMenuItem(
+              value: 'add',
+              child: _MenuRow(
+                icon: Icons.add,
+                label: 'Add Account',
+              ),
+            ),
+            const PopupMenuItem(
               value: 'import',
               child: _MenuRow(
                 icon: Icons.file_download_outlined,
@@ -189,54 +196,18 @@ class _HomePageState extends State<HomePage> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Action buttons — hide labels on narrow screens.
+          // Confirmations button.
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final compact = constraints.maxWidth < 400;
-                return Row(
-                  children: [
-                    Expanded(
-                      child: compact
-                          ? IconButton(
-                              onPressed: () =>
-                                  _onGlobalAction(context, vm, 'add'),
-                              icon: const Icon(Icons.add),
-                              tooltip: 'Add Account',
-                            )
-                          : OutlinedButton.icon(
-                              onPressed: () =>
-                                  _onGlobalAction(context, vm, 'add'),
-                              icon: const Icon(Icons.add, size: 18),
-                              label: const Text('Add Account'),
-                            ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: compact
-                          ? IconButton(
-                              onPressed: vm.currentAccount != null
-                                  ? () => _onGlobalAction(
-                                      context, vm, 'confirmations')
-                                  : null,
-                              icon: const Icon(Icons.check_circle_outline),
-                              tooltip: 'Confirmations',
-                            )
-                          : OutlinedButton.icon(
-                              onPressed: vm.currentAccount != null
-                                  ? () => _onGlobalAction(
-                                      context, vm, 'confirmations')
-                                  : null,
-                              icon: const Icon(
-                                  Icons.check_circle_outline,
-                                  size: 18),
-                              label: const Text('Confirmations'),
-                            ),
-                    ),
-                  ],
-                );
-              },
+            child: SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: vm.currentAccount != null
+                    ? () => _onGlobalAction(context, vm, 'confirmations')
+                    : null,
+                icon: const Icon(Icons.check_circle_outline, size: 18),
+                label: const Text('Confirmations'),
+              ),
             ),
           ),
 
