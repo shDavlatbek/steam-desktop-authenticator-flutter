@@ -151,10 +151,10 @@ class _HomePageState extends State<HomePage> {
               SizedBox(
                 width: 300,
                 child: Container(
-                  decoration: const BoxDecoration(
-                    color: SteamColors.darkBackground,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
                     border: Border(
-                      right: BorderSide(color: SteamColors.divider),
+                      right: BorderSide(color: Theme.of(context).dividerColor),
                     ),
                   ),
                   child: const AccountListWidget(),
@@ -187,10 +187,10 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildBottomBar(BuildContext context, HomeViewModel vm) {
     return Container(
-      decoration: const BoxDecoration(
-        color: SteamColors.darkBackground,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
         border: Border(
-          top: BorderSide(color: SteamColors.divider),
+          top: BorderSide(color: Theme.of(context).dividerColor),
         ),
       ),
       child: Column(
@@ -215,12 +215,12 @@ class _HomePageState extends State<HomePage> {
           if (vm.statusMessage != null && vm.statusMessage!.isNotEmpty)
             Container(
               width: double.infinity,
-              color: SteamColors.darkerBackground,
+              color: Theme.of(context).scaffoldBackgroundColor,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               child: Text(
                 vm.statusMessage!,
-                style: const TextStyle(
-                  color: SteamColors.textSecondary,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface.withAlpha(150),
                   fontSize: 12,
                 ),
                 maxLines: 1,
@@ -415,7 +415,7 @@ class _MenuRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 18, color: SteamColors.textSecondary),
+        Icon(icon, size: 18, color: Theme.of(context).colorScheme.onSurface.withAlpha(150)),
         const SizedBox(width: 10),
         Text(label),
       ],

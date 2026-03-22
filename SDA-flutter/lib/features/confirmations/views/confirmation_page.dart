@@ -98,7 +98,7 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
             // ── Confirmation list ────────────────────────────────────
             return RefreshIndicator(
               color: SteamColors.steamBlue,
-              backgroundColor: SteamColors.cardBackground,
+              backgroundColor: Theme.of(context).cardColor,
               onRefresh: () => vm.loadConfirmations(widget.account),
               child: ListView.builder(
                 padding: const EdgeInsets.symmetric(vertical: 12),
@@ -146,7 +146,7 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
             Text(
               vm.errorMessage!,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: SteamColors.textSecondary),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withAlpha(150)),
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
@@ -173,19 +173,19 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
               color: SteamColors.steamBlue.withAlpha(120),
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'No confirmations',
               style: TextStyle(
-                color: SteamColors.textPrimary,
+                color: Theme.of(context).colorScheme.onSurface,
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'There are no pending confirmations for this account.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: SteamColors.textSecondary),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withAlpha(150)),
             ),
           ],
         ),

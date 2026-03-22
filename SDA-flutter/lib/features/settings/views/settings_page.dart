@@ -276,13 +276,15 @@ class _SettingsPageState extends State<SettingsPage> {
     required bool value,
     required ValueChanged<bool> onChanged,
   }) {
+    final theme = Theme.of(context);
     return Card(
       child: SwitchListTile(
         title: Text(title,
-            style: const TextStyle(color: SteamColors.textPrimary)),
+            style: TextStyle(color: theme.colorScheme.onSurface)),
         subtitle: Text(subtitle,
-            style: const TextStyle(
-                color: SteamColors.textSecondary, fontSize: 12)),
+            style: TextStyle(
+                color: theme.colorScheme.onSurface.withAlpha(150),
+                fontSize: 12)),
         value: value,
         onChanged: onChanged,
       ),
@@ -290,21 +292,23 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Widget _buildIntervalField(SettingsViewModel vm) {
+    final theme = Theme.of(context);
     return Card(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
-            const Expanded(
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('Check interval (seconds)',
-                      style: TextStyle(color: SteamColors.textPrimary)),
-                  SizedBox(height: 4),
+                      style: TextStyle(color: theme.colorScheme.onSurface)),
+                  const SizedBox(height: 4),
                   Text('Minimum: 5 seconds',
                       style: TextStyle(
-                          color: SteamColors.textSecondary, fontSize: 12)),
+                          color: theme.colorScheme.onSurface.withAlpha(150),
+                          fontSize: 12)),
                 ],
               ),
             ),
@@ -384,7 +388,7 @@ class _SettingsPageState extends State<SettingsPage> {
             onPressed: () => Navigator.of(ctx).pop(true),
             style: ElevatedButton.styleFrom(
               backgroundColor: SteamColors.warning,
-              foregroundColor: SteamColors.darkerBackground,
+              foregroundColor: Colors.white,
             ),
             child: const Text('Enable'),
           ),

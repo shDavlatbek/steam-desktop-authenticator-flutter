@@ -39,23 +39,22 @@ class _AccountListWidgetState extends State<AccountListWidget> {
               child: TextField(
                 controller: _searchController,
                 onChanged: vm.filterAccounts,
-                style: const TextStyle(
-                  color: SteamColors.textPrimary,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontSize: 14,
                 ),
                 decoration: InputDecoration(
                   hintText: 'Search accounts...',
-                  hintStyle: const TextStyle(color: SteamColors.textSecondary),
-                  prefixIcon: const Icon(
+                  prefixIcon: Icon(
                     Icons.search,
-                    color: SteamColors.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurface.withAlpha(150),
                     size: 20,
                   ),
                   suffixIcon: _searchController.text.isNotEmpty
                       ? IconButton(
-                          icon: const Icon(
+                          icon: Icon(
                             Icons.clear,
-                            color: SteamColors.textSecondary,
+                            color: Theme.of(context).colorScheme.onSurface.withAlpha(150),
                             size: 18,
                           ),
                           onPressed: () {
@@ -80,7 +79,7 @@ class _AccountListWidgetState extends State<AccountListWidget> {
                         children: [
                           Icon(
                             Icons.shield_outlined,
-                            color: SteamColors.textSecondary.withAlpha(100),
+                            color: Theme.of(context).colorScheme.onSurface.withAlpha(80),
                             size: 48,
                           ),
                           const SizedBox(height: 12),
@@ -88,8 +87,8 @@ class _AccountListWidgetState extends State<AccountListWidget> {
                             vm.allAccounts.isEmpty
                                 ? 'No accounts'
                                 : 'No matching accounts',
-                            style: const TextStyle(
-                              color: SteamColors.textSecondary,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onSurface.withAlpha(150),
                               fontSize: 14,
                             ),
                           ),
@@ -131,6 +130,9 @@ class _AccountTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final onSurface = theme.colorScheme.onSurface;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Material(
@@ -141,7 +143,7 @@ class _AccountTile extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(8),
-          hoverColor: SteamColors.surfaceColor.withAlpha(120),
+          hoverColor: theme.colorScheme.primary.withAlpha(20),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
@@ -157,7 +159,7 @@ class _AccountTile extends StatelessWidget {
                   size: 18,
                   color: isSelected
                       ? SteamColors.steamBlue
-                      : SteamColors.textSecondary,
+                      : onSurface.withAlpha(150),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -166,7 +168,7 @@ class _AccountTile extends StatelessWidget {
                     style: TextStyle(
                       color: isSelected
                           ? SteamColors.steamBlue
-                          : SteamColors.textPrimary,
+                          : onSurface,
                       fontSize: 14,
                       fontWeight:
                           isSelected ? FontWeight.w600 : FontWeight.normal,

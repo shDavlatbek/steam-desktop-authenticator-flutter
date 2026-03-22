@@ -39,8 +39,8 @@ class ConfirmationCard extends StatelessWidget {
                     children: [
                       Text(
                         confirmation.headline ?? 'Confirmation',
-                        style: const TextStyle(
-                          color: SteamColors.textPrimary,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                         ),
@@ -48,8 +48,8 @@ class ConfirmationCard extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         'Creator ID: ${confirmation.creator}',
-                        style: const TextStyle(
-                          color: SteamColors.textSecondary,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface.withAlpha(150),
                           fontSize: 12,
                         ),
                       ),
@@ -70,8 +70,8 @@ class ConfirmationCard extends StatelessWidget {
                   padding: const EdgeInsets.only(bottom: 4),
                   child: Text(
                     line,
-                    style: const TextStyle(
-                      color: SteamColors.textSecondary,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface.withAlpha(150),
                       fontSize: 13,
                     ),
                   ),
@@ -142,7 +142,7 @@ class ConfirmationCard extends StatelessWidget {
               color: SteamColors.surfaceColor,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Icon(Icons.image, color: SteamColors.textSecondary),
+            child: const Icon(Icons.image, color: Colors.grey),
           ),
           errorWidget: (_, _, _) => _fallbackIcon(),
         ),

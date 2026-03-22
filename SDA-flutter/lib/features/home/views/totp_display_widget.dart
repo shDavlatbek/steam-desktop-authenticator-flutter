@@ -58,8 +58,8 @@ class _TotpContent extends StatelessWidget {
             // ── Account name ───────────────────────────────────────────
             Text(
               accountName,
-              style: const TextStyle(
-                color: SteamColors.textSecondary,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface.withAlpha(150),
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
               ),
@@ -86,7 +86,7 @@ class _TotpContent extends StatelessWidget {
                         child: CircularProgressIndicator(
                           value: 1.0,
                           strokeWidth: 6,
-                          color: SteamColors.surfaceColor,
+                          color: Theme.of(context).dividerColor,
                         ),
                       ),
                       // Animated progress ring
@@ -121,8 +121,8 @@ class _TotpContent extends StatelessWidget {
                               fontWeight: FontWeight.w700,
                               letterSpacing: 6,
                               color: code.isNotEmpty
-                                  ? SteamColors.textPrimary
-                                  : SteamColors.textSecondary,
+                                  ? Theme.of(context).colorScheme.onSurface
+                                  : Theme.of(context).colorScheme.onSurface.withAlpha(100),
                             ),
                           ),
                           const SizedBox(height: 6),
@@ -133,7 +133,7 @@ class _TotpContent extends StatelessWidget {
                               fontWeight: FontWeight.w500,
                               color: isLow
                                   ? SteamColors.warning
-                                  : SteamColors.textSecondary,
+                                  : Theme.of(context).colorScheme.onSurface.withAlpha(150),
                             ),
                           ),
                         ],
@@ -149,8 +149,8 @@ class _TotpContent extends StatelessWidget {
             // ── Tap hint ─────────────────────────────────────────────
             Text(
               code.isNotEmpty ? 'Tap to copy' : '',
-              style: const TextStyle(
-                color: SteamColors.textSecondary,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface.withAlpha(120),
                 fontSize: 12,
               ),
             ),
@@ -167,32 +167,25 @@ class _NoAccountPlaceholder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.lock_outline,
-            size: 64,
-            color: SteamColors.textSecondary.withAlpha(80),
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'No account selected',
-            style: TextStyle(
-              color: SteamColors.textSecondary,
-              fontSize: 16,
+      child: Builder(builder: (context) {
+        final muted = Theme.of(context).colorScheme.onSurface.withAlpha(100);
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.lock_outline, size: 64, color: muted),
+            const SizedBox(height: 16),
+            Text(
+              'No account selected',
+              style: TextStyle(color: muted, fontSize: 16),
             ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Select an account from the list to view its code.',
-            style: TextStyle(
-              color: SteamColors.textSecondary,
-              fontSize: 13,
+            const SizedBox(height: 8),
+            Text(
+              'Select an account from the list to view its code.',
+              style: TextStyle(color: muted, fontSize: 13),
             ),
-          ),
-        ],
-      ),
+          ],
+        );
+      }),
     );
   }
 }
