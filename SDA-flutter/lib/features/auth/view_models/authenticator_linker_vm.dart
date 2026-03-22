@@ -4,10 +4,8 @@ import 'package:uuid/uuid.dart';
 import 'package:sda_flutter/core/crypto/steam_totp.dart';
 import 'package:sda_flutter/core/models/session_data.dart';
 import 'package:sda_flutter/core/models/steam_guard_account.dart';
-import 'package:sda_flutter/core/services/steam_phone_service.dart';
 import 'package:sda_flutter/core/services/steam_time_service.dart';
 import 'package:sda_flutter/core/services/steam_two_factor_service.dart';
-import 'package:sda_flutter/core/services/steam_user_service.dart';
 import 'package:sda_flutter/core/services/steam_web_service.dart';
 
 /// Represents the current state of the authenticator linking flow.
@@ -59,11 +57,6 @@ class AuthenticatorLinkerViewModel extends ChangeNotifier {
   /// The session obtained from the login step.
   SessionData? _session;
 
-  /// Phone number provided by the user (international format, e.g. +1XXXXXXXXXX).
-  String? _phoneNumber;
-
-  /// Country code provided by the user (ISO 3166-1 alpha-2, e.g. "US").
-  String? _countryCode;
 
   AuthenticatorLinkerViewModel({
     required SteamWebService web,
@@ -101,162 +94,16 @@ class AuthenticatorLinkerViewModel extends ChangeNotifier {
     }
   }
 
-  /// Begins the linking flow by checking whether the account already has a
-  /// verified phone number.
+  /// Begins the linking flow by calling AddAuthenticator directly.
+  ///
+  /// Steam will send the activation code to the account's email or phone
+  /// automatically — no need to check or add a phone number first.
   Future<void> startLinking(SessionData session) async {
     _session = session;
     deviceId = 'android:${const Uuid().v4()}';
-
-    state = LinkingState.checkingPhone;
     errorMessage = null;
-    notifyListeners();
 
-    try {
-      final hasPhone = await SteamPhoneService.getAccountPhoneStatus(
-        _web,
-        _session!.accessToken!,
-      );
-
-      if (hasPhone) {
-        // Phone already verified -- skip straight to adding the authenticator.
-        await _addAuthenticator();
-      } else {
-        // Need to add a phone number first.
-        // Try to detect the user's country for convenience.
-        try {
-          _countryCode = await SteamUserService.getUserCountry(
-            _web,
-            _session!.accessToken!,
-            _session!.steamID,
-          );
-        } catch (_) {
-          // Non-critical; the user can enter it manually.
-        }
-
-        state = LinkingState.mustProvidePhone;
-        notifyListeners();
-      }
-    } catch (e) {
-      state = LinkingState.error;
-      errorMessage = _formatError(e);
-      notifyListeners();
-    }
-  }
-
-  /// The auto-detected country code (or null).
-  String? get detectedCountryCode => _countryCode;
-
-  /// Submits the phone number to associate with the Steam account.
-  ///
-  /// After a successful call, Steam sends a confirmation email that the user
-  /// must click before proceeding.
-  Future<void> setPhoneNumber(String phone, String countryCode) async {
-    if (phone.trim().isEmpty || countryCode.trim().isEmpty) {
-      state = LinkingState.error;
-      errorMessage = 'Phone number and country code are required.';
-      notifyListeners();
-      return;
-    }
-
-    _phoneNumber = phone.trim();
-    _countryCode = countryCode.trim().toUpperCase();
-
-    state = LinkingState.checkingPhone;
-    notifyListeners();
-
-    try {
-      confirmationEmailAddress = await SteamPhoneService.setAccountPhoneNumber(
-        _web,
-        _session!.accessToken!,
-        _phoneNumber!,
-        _countryCode!,
-      );
-
-      state = LinkingState.mustConfirmEmail;
-      notifyListeners();
-    } catch (e) {
-      state = LinkingState.error;
-      errorMessage = _formatError(e);
-      notifyListeners();
-    }
-  }
-
-  /// Called by the UI after the user says they have confirmed the email.
-  ///
-  /// Polls Steam to verify the email confirmation went through, then
-  /// sends the phone verification SMS and moves to the SMS code entry step.
-  Future<void> confirmEmailDone() async {
-    state = LinkingState.checkingPhone;
-    notifyListeners();
-
-    try {
-      // Poll for email confirmation (up to 30 attempts, 2 seconds apart).
-      bool confirmed = false;
-      for (int i = 0; i < 30; i++) {
-        final waiting =
-            await SteamPhoneService.isAccountWaitingForEmailConfirmation(
-          _web,
-          _session!.accessToken!,
-        );
-
-        if (!waiting) {
-          confirmed = true;
-          break;
-        }
-
-        await Future.delayed(const Duration(seconds: 2));
-      }
-
-      if (!confirmed) {
-        state = LinkingState.error;
-        errorMessage =
-            'Email confirmation timed out. Please confirm and try again.';
-        notifyListeners();
-        return;
-      }
-
-      // Email confirmed. Now send the phone verification SMS.
-      await SteamPhoneService.sendPhoneVerificationCode(
-        _web,
-        _session!.accessToken!,
-      );
-
-      state = LinkingState.enterSmsCode;
-      notifyListeners();
-    } catch (e) {
-      state = LinkingState.error;
-      errorMessage = _formatError(e);
-      notifyListeners();
-    }
-  }
-
-  /// Verifies the phone number using the SMS code the user received, then
-  /// proceeds to add the authenticator.
-  Future<void> submitPhoneSmsCode(String code) async {
-    if (code.trim().isEmpty) {
-      state = LinkingState.error;
-      errorMessage = 'Please enter the SMS code.';
-      notifyListeners();
-      return;
-    }
-
-    state = LinkingState.checkingPhone;
-    notifyListeners();
-
-    try {
-      await SteamPhoneService.verifyAccountPhoneWithCode(
-        _web,
-        _session!.accessToken!,
-        code.trim(),
-      );
-
-      // Phone verified -- add the authenticator.
-      await _addAuthenticator();
-    } catch (e) {
-      state = LinkingState.error;
-      errorMessage = _formatError(e);
-      notifyListeners();
-    }
+    await _addAuthenticator();
   }
 
   /// Calls ITwoFactorService/AddAuthenticator to register a new authenticator
@@ -439,8 +286,6 @@ class AuthenticatorLinkerViewModel extends ChangeNotifier {
     confirmationEmailAddress = null;
     revocationCode = null;
     _session = null;
-    _phoneNumber = null;
-    _countryCode = null;
     notifyListeners();
   }
 

@@ -22,8 +22,6 @@ class AuthenticatorLinkPage extends StatefulWidget {
 
 class _AuthenticatorLinkPageState extends State<AuthenticatorLinkPage> {
   late final AuthenticatorLinkerViewModel _vm;
-  final _phoneController = TextEditingController();
-  final _countryController = TextEditingController();
   final _smsController = TextEditingController();
 
   @override
@@ -41,8 +39,6 @@ class _AuthenticatorLinkPageState extends State<AuthenticatorLinkPage> {
   void dispose() {
     _vm.removeListener(_onStateChanged);
     _vm.dispose();
-    _phoneController.dispose();
-    _countryController.dispose();
     _smsController.dispose();
     super.dispose();
   }
@@ -50,12 +46,6 @@ class _AuthenticatorLinkPageState extends State<AuthenticatorLinkPage> {
   void _onStateChanged() {
     if (!mounted) return;
     setState(() {});
-
-    if (_vm.state == LinkingState.mustProvidePhone &&
-        _vm.detectedCountryCode != null &&
-        _countryController.text.isEmpty) {
-      _countryController.text = _vm.detectedCountryCode!;
-    }
   }
 
   @override
@@ -91,19 +81,16 @@ class _AuthenticatorLinkPageState extends State<AuthenticatorLinkPage> {
         return _buildLoading(_vm.statusText);
 
       case LinkingState.mustProvidePhone:
-        return _buildPhoneInput(theme);
-
       case LinkingState.mustConfirmEmail:
-        return _buildEmailConfirmation(theme);
-
       case LinkingState.enterSmsCode:
-        return _buildSmsCodeEntry(theme, isFinalization: false);
+        // Phone flow bypassed — these states shouldn't be reached.
+        return _buildLoading(_vm.statusText);
 
       case LinkingState.showRevocationCode:
         return _buildRevocationCode(theme);
 
       case LinkingState.awaitingFinalization:
-        return _buildSmsCodeEntry(theme, isFinalization: true);
+        return _buildSmsCodeEntry(theme);
 
       case LinkingState.success:
         return _buildSuccess(theme);
@@ -127,117 +114,21 @@ class _AuthenticatorLinkPageState extends State<AuthenticatorLinkPage> {
     );
   }
 
-  // ── Phone input ──────────────────────────────────────────────────────
+  // ── SMS code entry (finalization) ─────────────────────────────────────
 
-  Widget _buildPhoneInput(ThemeData theme) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(Icons.phone_android, size: 48,
-            color: theme.colorScheme.primary),
-        const SizedBox(height: 16),
-        Text('Phone Number Required',
-            style: theme.textTheme.headlineSmall),
-        const SizedBox(height: 8),
-        Text(
-          'A verified phone number is required to add Steam Guard. '
-          'Enter your phone number below.',
-          textAlign: TextAlign.center,
-          style: TextStyle(color: theme.colorScheme.onSurface.withAlpha(150)),
-        ),
-        const SizedBox(height: 24),
-        TextField(
-          controller: _countryController,
-          textCapitalization: TextCapitalization.characters,
-          decoration: const InputDecoration(
-            labelText: 'Country Code',
-            hintText: 'US',
-          ),
-          inputFormatters: [
-            FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z]')),
-            LengthLimitingTextInputFormatter(2),
-          ],
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _phoneController,
-          keyboardType: TextInputType.phone,
-          decoration: const InputDecoration(
-            labelText: 'Phone Number',
-            hintText: '+1234567890',
-          ),
-        ),
-        const SizedBox(height: 24),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: () => _vm.setPhoneNumber(
-              _phoneController.text,
-              _countryController.text,
-            ),
-            child: const Text('Submit Phone Number'),
-          ),
-        ),
-        const SizedBox(height: 12),
-        // Option to skip phone if the account might already have one
-        TextButton(
-          onPressed: () => _vm.startLinking(widget.session),
-          child: const Text('Retry without phone'),
-        ),
-      ],
-    );
-  }
-
-  // ── Email confirmation ───────────────────────────────────────────────
-
-  Widget _buildEmailConfirmation(ThemeData theme) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(Icons.email_outlined, size: 48,
-            color: theme.colorScheme.primary),
-        const SizedBox(height: 16),
-        Text('Confirm Your Email',
-            style: theme.textTheme.headlineSmall),
-        const SizedBox(height: 8),
-        Text(
-          _vm.confirmationEmailAddress != null
-              ? 'Steam sent a confirmation link to ${_vm.confirmationEmailAddress}. '
-                'Click the link in the email, then press the button below.'
-              : 'Check your email and click the confirmation link from Steam, '
-                'then press the button below.',
-          textAlign: TextAlign.center,
-          style: TextStyle(color: theme.colorScheme.onSurface.withAlpha(150)),
-        ),
-        const SizedBox(height: 24),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: _vm.confirmEmailDone,
-            child: const Text('I\'ve Confirmed the Email'),
-          ),
-        ),
-      ],
-    );
-  }
-
-  // ── SMS code entry (for phone verification OR finalization) ──────────
-
-  Widget _buildSmsCodeEntry(ThemeData theme,
-      {required bool isFinalization}) {
+  Widget _buildSmsCodeEntry(ThemeData theme) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Icon(Icons.sms_outlined, size: 48,
             color: theme.colorScheme.primary),
         const SizedBox(height: 16),
-        Text(isFinalization ? 'Finalize Authenticator' : 'Verify Phone',
+        Text('Finalize Authenticator',
             style: theme.textTheme.headlineSmall),
         const SizedBox(height: 8),
         Text(
-          isFinalization
-              ? 'Enter the SMS code sent to your phone to finalize the authenticator.'
-              : 'Enter the SMS verification code sent to your phone.',
+          'Enter the activation code sent to your email or phone to '
+          'finalize the authenticator.',
           textAlign: TextAlign.center,
           style: TextStyle(color: theme.colorScheme.onSurface.withAlpha(150)),
         ),
@@ -248,31 +139,27 @@ class _AuthenticatorLinkPageState extends State<AuthenticatorLinkPage> {
           textAlign: TextAlign.center,
           style: const TextStyle(fontSize: 24, letterSpacing: 8),
           decoration: const InputDecoration(
-            labelText: 'SMS Code',
+            labelText: 'Activation Code',
             hintText: '12345',
           ),
-          onSubmitted: (_) => _submitSms(isFinalization),
+          onSubmitted: (_) => _submitFinalize(),
         ),
         const SizedBox(height: 24),
         SizedBox(
           width: double.infinity,
           child: ElevatedButton(
-            onPressed: () => _submitSms(isFinalization),
-            child: Text(isFinalization ? 'Finalize' : 'Verify'),
+            onPressed: _submitFinalize,
+            child: const Text('Finalize'),
           ),
         ),
       ],
     );
   }
 
-  void _submitSms(bool isFinalization) {
+  void _submitFinalize() {
     final code = _smsController.text;
     _smsController.clear();
-    if (isFinalization) {
-      _vm.finalizeAuthenticator(code);
-    } else {
-      _vm.submitPhoneSmsCode(code);
-    }
+    _vm.finalizeAuthenticator(code);
   }
 
   // ── Revocation code ──────────────────────────────────────────────────
