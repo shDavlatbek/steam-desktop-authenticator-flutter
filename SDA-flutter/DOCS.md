@@ -2,10 +2,11 @@
 
 ## Project Overview
 
-This is a complete port of [SteamDesktopAuthenticator](../SteamDesktopAuthenticator/) (C# WinForms) to Flutter with a modern Material 3 dark UI. Every function from the original C# application has been ported to Dart — no mock data, no demos. The app generates real Steam Guard TOTP codes, manages trade/market confirmations, links new authenticators, and handles encrypted maFile storage.
+This is a complete port of [SteamDesktopAuthenticator](../SteamDesktopAuthenticator/) (C# WinForms) to Flutter with a modern Material 3 UI supporting both dark and light themes. Every function from the original C# application has been ported to Dart — no mock data, no demos. The app generates real Steam Guard TOTP codes, manages trade/market confirmations, links new authenticators, and handles encrypted maFile storage.
 
 **Original C# project**: `../SteamDesktopAuthenticator/`
 **Flutter port**: `./` (this directory)
+**Platforms**: Windows, Android
 
 ---
 
@@ -35,19 +36,20 @@ lib/
 │   │   └── manifest.dart              # Manifest index + settings
 │   │
 │   ├── services/                      # Steam API communication
-│   │   ├── steam_web_service.dart     # HTTP client (GET/POST with cookies)
+│   │   ├── steam_web_service.dart     # HTTP client (GET/POST/raw POST with cookies)
 │   │   ├── steam_time_service.dart    # Time sync with Steam servers
 │   │   ├── steam_auth_service.dart    # Login (RSA + web auth API)
 │   │   ├── steam_token_service.dart   # Access token refresh
 │   │   ├── steam_two_factor_service.dart  # Add/finalize/remove authenticator
 │   │   ├── steam_phone_service.dart   # Phone number management
 │   │   ├── steam_confirmation_service.dart # Confirmation API calls
-│   │   └── steam_user_service.dart    # Get user country
+│   │   ├── steam_user_service.dart    # Get user country
+│   │   └── debug_logger.dart          # In-memory debug log capture
 │   │
 │   └── repositories/                  # Business logic orchestration
 │       ├── manifest_repository.dart   # File I/O, encryption, maFile management
 │       ├── account_repository.dart    # TOTP generation, login, session refresh
-│       └── confirmation_repository.dart # Fetch/accept/deny confirmations
+│       └── confirmation_repository.dart # Fetch/accept/deny confirmations + auto token refresh
 │
 ├── features/                          # Feature modules (MVVM)
 │   ├── home/                          # Main screen
@@ -63,6 +65,7 @@ lib/
 │   │   │   └── authenticator_linker_vm.dart
 │   │   └── views/
 │   │       ├── login_page.dart
+│   │       ├── authenticator_link_page.dart  # Full linking UI flow
 │   │       ├── phone_input_page.dart
 │   │       ├── sms_code_page.dart
 │   │       └── email_confirmation_page.dart
@@ -70,12 +73,14 @@ lib/
 │   ├── confirmations/                 # Trade/market confirmations
 │   │   ├── view_models/confirmation_view_model.dart
 │   │   └── views/
-│   │       ├── confirmation_page.dart
+│   │       ├── confirmation_page.dart  # With bulk accept/deny all
 │   │       └── confirmation_card.dart
 │   │
 │   ├── settings/                      # App settings
 │   │   ├── view_models/settings_view_model.dart
-│   │   └── views/settings_page.dart
+│   │   └── views/
+│   │       ├── settings_page.dart      # With theme toggle, sticky save
+│   │       └── debug_log_page.dart     # Debug log viewer
 │   │
 │   ├── encryption/                    # Passkey management
 │   │   ├── view_models/encryption_view_model.dart
@@ -83,20 +88,26 @@ lib/
 │   │       ├── encryption_setup_page.dart
 │   │       └── passkey_dialog.dart
 │   │
-│   └── import_export/                 # Import + first-run
-│       ├── view_models/import_view_model.dart
+│   └── import_export/                 # Import + export + first-run
+│       ├── view_models/
+│       │   ├── import_view_model.dart
+│       │   └── export_view_model.dart
 │       └── views/
 │           ├── import_page.dart
+│           ├── export_page.dart        # Export all/selected with manifest
 │           └── welcome_page.dart
 │
 └── shared/                            # Cross-feature shared code
     ├── theme/
-    │   ├── app_theme.dart             # Material 3 dark theme
-    │   └── colors.dart                # Steam-inspired color palette
+    │   ├── app_theme.dart             # Material 3 dark + light themes
+    │   ├── colors.dart                # Steam-inspired color palette
+    │   └── theme_notifier.dart        # Dark/light mode state
     └── widgets/
         ├── input_dialog.dart          # Generic text input dialog
         └── loading_overlay.dart       # Loading state overlay
 ```
+
+**Total: 53 Dart source files**
 
 ---
 
@@ -112,26 +123,26 @@ Every class and method from the original C# project has been ported. Here is the
 | `SteamGuardAccount` (TOTP) | `lib/SteamAuth/SteamGuardAccount.cs:95-134` | `core/crypto/steam_totp.dart` | Byte-identical HMAC-SHA1 algorithm |
 | `SteamGuardAccount` (Conf Hash) | `lib/SteamAuth/SteamGuardAccount.cs:279-325` | `core/crypto/confirmation_hash.dart` | Byte-identical HMAC-SHA1 + URL encode |
 | `SteamGuardAccount` (Properties) | `lib/SteamAuth/SteamGuardAccount.cs` | `core/models/steam_guard_account.dart` | JSON keys match exactly |
-| `SteamGuardAccount` (Confirmations) | `lib/SteamAuth/SteamGuardAccount.cs:136-242` | `core/repositories/confirmation_repository.dart` | All accept/deny/multi ops |
+| `SteamGuardAccount` (Confirmations) | `lib/SteamAuth/SteamGuardAccount.cs:136-242` | `core/repositories/confirmation_repository.dart` | All accept/deny/multi ops + auto token refresh |
 | `SessionData` | `lib/SteamAuth/SessionData.cs` | `core/models/session_data.dart` | JWT parsing, cookies, token refresh |
-| `Confirmation` | `lib/SteamAuth/Confirmation.cs` | `core/models/confirmation.dart` | Including `ConfirmationsResponse` |
+| `Confirmation` | `lib/SteamAuth/Confirmation.cs` | `core/models/confirmation.dart` | String IDs (handles Steam's large uint64 values) |
 | `TimeAligner` | `lib/SteamAuth/TimeAligner.cs` | `core/services/steam_time_service.dart` | Singleton, same algorithm |
-| `SteamWeb` | `lib/SteamAuth/SteamWeb.cs` | `core/services/steam_web_service.dart` | Mobile user agent preserved |
-| `AuthenticatorLinker` | `lib/SteamAuth/AuthenticatorLinker.cs` | `features/auth/view_models/authenticator_linker_vm.dart` | Full state machine + all phone service calls |
+| `SteamWeb` | `lib/SteamAuth/SteamWeb.cs` | `core/services/steam_web_service.dart` | Mobile user agent preserved, debug logging |
+| `AuthenticatorLinker` | `lib/SteamAuth/AuthenticatorLinker.cs` | `features/auth/view_models/authenticator_linker_vm.dart` | Direct AddAuthenticator (no phone check), same finalization |
 
 ### Application Layer (Steam Desktop Authenticator → features/)
 
 | C# Class | C# File | Flutter File | Notes |
 |---|---|---|---|
 | `FileEncryptor` | `FileEncryptor.cs` | `core/crypto/file_encryptor.dart` | AES-256-CBC + PBKDF2 (50k, SHA1) |
-| `Manifest` | `Manifest.cs` | `core/models/manifest.dart` + `core/repositories/manifest_repository.dart` | Model + I/O separated |
-| `MainForm` | `MainForm.cs` | `features/home/` (4 files) | TOTP timer, account list, search |
-| `LoginForm` | `LoginForm.cs` | `features/auth/` (6 files) | 3 login modes, RSA web auth |
-| `ConfirmationFormWeb` | `ConfirmationFormWeb.cs` | `features/confirmations/` (3 files) | Card-based UI |
-| `SettingsForm` | `SettingsForm.cs` | `features/settings/` (2 files) | All settings preserved |
-| `ImportAccountForm` | `ImportAccountForm.cs` | `features/import_export/` (3 files) | File picker + encryption |
+| `Manifest` | `Manifest.cs` | `core/models/manifest.dart` + `core/repositories/manifest_repository.dart` | Model + I/O separated; added debug_mode, dark_mode |
+| `MainForm` | `MainForm.cs` | `features/home/` (4 files) | TOTP timer, account list, search, tap-to-copy |
+| `LoginForm` | `LoginForm.cs` | `features/auth/` (7 files) | 3 login modes, RSA web auth, authenticator linking UI |
+| `ConfirmationFormWeb` | `ConfirmationFormWeb.cs` | `features/confirmations/` (3 files) | Card-based UI + bulk accept/deny all |
+| `SettingsForm` | `SettingsForm.cs` | `features/settings/` (3 files) | All settings + dark/light theme + debug mode + log viewer |
+| `ImportAccountForm` | `ImportAccountForm.cs` | `features/import_export/` (5 files) | Import + Export with manifest.json |
 | `InputForm` | `InputForm.cs` | `shared/widgets/input_dialog.dart` | Generic reusable dialog |
-| `WelcomeForm` | `WelcomeForm.cs` | `features/import_export/views/welcome_page.dart` | First-run flow |
+| `WelcomeForm` | `WelcomeForm.cs` | `features/import_export/views/welcome_page.dart` | First-run flow, Android multi-pick |
 | `PhoneInputForm` | `PhoneInputForm.cs` | `features/auth/views/phone_input_page.dart` | Validation preserved |
 
 ### Key Technical Differences from C#
@@ -144,7 +155,10 @@ Every class and method from the original C# project has been ported. Here is the
 | **JSON** | `Newtonsoft.Json` | Manual `fromJson`/`toJson` (no code generation) |
 | **State Management** | WinForms events | Provider + ChangeNotifier (MVVM) |
 | **File Storage** | `{exe_dir}/maFiles/` | `{appSupportDir}/maFiles/` via `path_provider` |
-| **System Tray** | `NotifyIcon` (native) | `tray_manager` + `window_manager` (not yet wired) |
+| **Theme** | WinForms default | Material 3 dark + light, switchable |
+| **Confirmation IDs** | `ulong` | `String` (handles Steam's large uint64 nonce values safely) |
+| **Authenticator Linking** | Phone check → AddAuthenticator | Direct AddAuthenticator (Steam sends code to email) |
+| **Multi-confirm body** | Form-encoded POST body | Raw string POST body (repeated cid[]/ck[] keys) |
 
 ---
 
@@ -156,7 +170,7 @@ All three crypto operations produce **byte-identical output** to the C# original
 ```
 Input:  SharedSecret (Base64) + Unix timestamp
 Steps:  Unescape → Base64 decode → time/30 → 8-byte big-endian
-        → HMAC-SHA1 → dynamic binary code → mod 26 × 5
+        → HMAC-SHA1 → dynamic binary code → mod 26 x 5
         → map to "23456789BCDFGHJKMNPQRTVWXY"
 Output: 5-character code (e.g., "7BHFM")
 ```
@@ -200,7 +214,9 @@ Format: Salt and IV stored in manifest.json per-entry
   "periodic_checking_interval": 5,
   "periodic_checking_checkall": false,
   "auto_confirm_market_transactions": false,
-  "auto_confirm_trades": false
+  "auto_confirm_trades": false,
+  "debug_mode": false,
+  "dark_mode": true
 }
 ```
 
@@ -240,13 +256,13 @@ All JSON keys match the C# version exactly, ensuring cross-compatibility.
 |---|---|---|
 | `ITwoFactorService/QueryTime/v0001` | Sync time with Steam | POST |
 | `ITwoFactorService/AddAuthenticator/v1` | Link new authenticator | POST |
-| `ITwoFactorService/FinalizeAddAuthenticator/v1` | Finalize with SMS | POST |
+| `ITwoFactorService/FinalizeAddAuthenticator/v1` | Finalize with activation code | POST |
 | `ITwoFactorService/RemoveAuthenticator/v1` | Deactivate authenticator | POST |
 | `IAuthenticationService/GetPasswordRSAPublicKey/v1` | Get RSA key for login | GET |
 | `IAuthenticationService/BeginAuthSessionViaCredentials/v1` | Start login | POST |
 | `IAuthenticationService/PollAuthSessionStatus/v1` | Poll login result | POST |
 | `IAuthenticationService/UpdateAuthSessionWithSteamGuardCode/v1` | Submit 2FA code | POST |
-| `IAuthenticationService/GenerateAccessTokenForApp/v1` | Refresh tokens | POST |
+| `IAuthenticationService/GenerateAccessTokenForApp/v1` | Refresh access token | POST |
 | `IPhoneService/AccountPhoneStatus/v1` | Check phone status | POST |
 | `IPhoneService/SetAccountPhoneNumber/v1` | Add phone number | POST |
 | `IPhoneService/VerifyAccountPhoneWithCode/v1` | Verify SMS code | POST |
@@ -255,7 +271,7 @@ All JSON keys match the C# version exactly, ensuring cross-compatibility.
 | `IUserAccountService/GetUserCountry/v1` | Get user country | POST |
 | `steamcommunity.com/mobileconf/getlist` | Fetch confirmations | GET |
 | `steamcommunity.com/mobileconf/ajaxop` | Accept/deny single | GET |
-| `steamcommunity.com/mobileconf/multiajaxop` | Accept/deny batch | POST |
+| `steamcommunity.com/mobileconf/multiajaxop` | Accept/deny batch | POST (raw body) |
 
 ---
 
@@ -270,7 +286,7 @@ All JSON keys match the C# version exactly, ensuring cross-compatibility.
 | `convert` | ^3.1.2 | Base64 encoding utilities |
 | `json_annotation` | ^4.9.0 | JSON annotation support |
 | `path_provider` | ^2.1.5 | App data directory for maFiles |
-| `file_picker` | ^8.1.7 | File/folder picker for import |
+| `file_picker` | ^8.1.7 | File/folder picker for import/export |
 | `window_manager` | ^0.4.3 | Desktop window management |
 | `tray_manager` | ^0.2.3 | System tray support |
 | `cached_network_image` | ^3.4.1 | Confirmation icons |
@@ -299,79 +315,106 @@ flutter test
 
 ---
 
-## Current Status: What's Done vs. What's TODO
+## Current Status
 
-### DONE (Complete)
+### Fully Implemented
 
-- [x] All 47 Dart source files implemented
+- [x] 53 Dart source files
 - [x] All C# cryptographic functions ported (TOTP, confirmation hash, AES encryption)
 - [x] All C# data models ported with exact JSON key compatibility
-- [x] All 8 Steam API service classes implemented
-- [x] All 3 repository classes implemented
-- [x] All 7 ViewModel classes implemented
-- [x] All UI screens built (Home, Login, Phone, SMS, Email, Confirmations, Settings, Encryption, Import, Welcome)
-- [x] All 7 navigation actions wired up in `home_page.dart` (no remaining TODOs)
-- [x] Material 3 dark theme with Steam-inspired colors
-- [x] App shell with initialization flow (manifest load → first-run check → welcome or home)
+- [x] All 9 Steam API service classes (including debug logger)
+- [x] All 3 repository classes with auto token refresh
+- [x] All 8 ViewModel classes
+- [x] All UI screens built and wired
+- [x] Full authenticator linking flow (Add Authenticator → revocation code → finalize)
+- [x] Bulk accept/deny all confirmations
+- [x] Import single file + multi-file import (Android SAF compatible)
+- [x] Export selected/all accounts with manifest.json
+- [x] Dark/light theme toggle (persisted)
+- [x] Debug mode with HTTP request/response log viewer
+- [x] Tap-to-copy TOTP code (circle widget)
+- [x] Auto access token refresh before confirmation operations
+- [x] Session persistence on re-login (tokens saved to disk)
+- [x] Responsive layout (wide: side-by-side, narrow: stacked)
+- [x] Android file picker compatibility (FileType.any, multi-pick)
 - [x] 33 passing tests
 - [x] 0 analysis issues
-- [x] 4 custom agent skills
 
-### DONE (Navigation — Previously TODO, Now Wired)
+### Navigation
 
-All 7 navigation actions in `home_page.dart` are now fully connected:
-
-| Action | Target Screen | Behavior on Return |
+| Menu Item | Target | Behavior |
 |---|---|---|
-| Login Again | `LoginPage` (refresh mode, passes current account) | Reloads accounts |
-| Import Account | `ImportPage` | Reloads accounts |
-| Settings | `SettingsPage` | Re-initializes HomeViewModel |
-| Quit | `SystemNavigator.pop()` | Exits app |
-| Add Account | `LoginPage` (initial mode) | Reloads accounts |
-| Confirmations | `ConfirmationPage` (passes current account) | — |
-| Manage Encryption | `EncryptionSetupPage` | Reloads accounts |
+| Add Account | Login → Add Authenticator dialog → Linking flow | Saves linked account |
+| Import Account | ImportPage (single file or multi-pick) | Reloads accounts |
+| Export Accounts | ExportPage (select all/individual) | Copies maFiles + manifest |
+| Settings | SettingsPage (theme, checking, auto-confirm, debug) | Persists to manifest |
+| Manage Encryption | EncryptionSetupPage | Reloads accounts |
+| Login Again | LoginPage (refresh mode) | Saves new tokens to disk |
+| Confirmations | ConfirmationPage (with bulk ops) | Accept/deny/accept all/deny all |
+| Quit | SystemNavigator.pop() | Exits app |
 
-### TODO (Not Yet Implemented — Future Work)
+### Known Limitations / Future Work
 
 | Feature | Description | Effort |
 |---|---|---|
-| **System tray** | `tray_manager` + `window_manager` for minimize-to-tray, tray menu (Restore, Copy Code, Quit) | Medium |
+| **System tray** | `tray_manager` + `window_manager` for minimize-to-tray | Medium |
 | **Single instance check** | Prevent multiple app instances on desktop | Small |
-| **CLI arguments** | `--encryption-key` / `-k` and `--silent` / `-s` | Small |
+| **CLI arguments** | `--encryption-key` and `--silent` | Small |
 | **Periodic confirmation checking** | Background timer that auto-fetches confirmations | Medium |
-| **Auto-confirm logic** | Auto-accept trades/market based on settings (uses periodic checker) | Medium |
+| **Auto-confirm logic** | Auto-accept trades/market based on settings | Medium |
 | **Trade popup overlay** | Bottom-right notification for new confirmations (desktop) | Medium |
 | **Update checker** | Check GitHub releases for new version | Small |
-| **Account reorder drag-and-drop** | ReorderableListView instead of Ctrl+Up/Down | Small |
-| **Error handling hardening** | Network timeout handling, retry logic, offline mode | Medium |
-| **Cross-platform testing** | Verify on macOS, Linux, Android, iOS | Large |
+
+---
+
+## Changelog (Recent)
+
+### Authenticator Linking
+- Added `AuthenticatorLinkPage` — full UI flow for adding Steam Guard to accounts
+- Calls `AddAuthenticator` directly (no phone number check — Steam sends activation code to email)
+- Shows revocation code with copy button, then asks for activation code to finalize
+- Home page "Add Account" flow: Login → Ask to add authenticator → Link → Save
+
+### Confirmations
+- Fixed `{"success":false,"needauth":true}` — auto-refresh expired access tokens before every confirmation request
+- Fixed `type 'String' is not a subtype of type 'int?'` — Confirmation IDs (`id`, `nonce`, `creator_id`) changed from `int` to `String` to handle Steam's large uint64 values
+- Fixed bulk accept/deny — `multiajaxop` now sends all params in POST body (not URL query string)
+- Added "Accept All" / "Deny All" buttons (visible when 2+ confirmations exist)
+- Proper error handling — checks return value, shows error if `success: false`
+
+### Session Management
+- Fixed "Login Again" not persisting — new tokens are now saved to the `.maFile` on disk after re-login
+- Auto token refresh in `ConfirmationRepository._ensureValidSession()` before every API call
+
+### Import / Export
+- Fixed Android file picker crash — uses `FileType.any` instead of unsupported `FileType.custom` with `.maFile` extension
+- Fixed Android directory listing — uses multi-file picker instead of SAF directory (which returns content URIs that `dart:io` can't traverse)
+- Added Export page — select all or individual accounts, exports `.maFile` files + `manifest.json`
+
+### UI
+- Added dark/light theme toggle (persisted in manifest as `dark_mode`)
+- Replaced hardcoded `SteamColors.*` with `Theme.of(context)` lookups across all visible screens
+- TOTP code — tap the circle to copy (removed separate copy button)
+- Bottom bar — single Confirmations button (Add Account moved to menu)
+- Responsive button labels — icon-only on small screens
+- Moved Encryption to app bar overflow menu
+- Settings save button fixed to bottom
+- Reduced card margins for better space usage
+
+### Debug Mode
+- Added `DebugLogger` singleton with in-memory log capture (INFO/ERROR/HTTP)
+- HTTP logging in `SteamWebService` — logs every request URL, status code, response body
+- Detailed logging in `ConfirmationRepository` — account state, built URLs, raw responses
+- Debug toggle in Settings (persisted in manifest as `debug_mode`)
+- Debug log viewer page with color-coded entries, copy all, clear
+
+### Build
+- Fixed Gradle OOM crash — reduced JVM heap from 8G to 4G in `gradle.properties`
+- Android manifest includes internet + file access permissions
 
 ---
 
 ## How to Work on This Project
-
-### Development Commands
-
-```bash
-# Install dependencies
-cd SDA-flutter
-flutter pub get
-
-# Run the app (Windows)
-flutter run -d windows
-
-# Run all tests
-flutter test
-
-# Run specific test file
-flutter test test/core/crypto/steam_totp_test.dart
-
-# Analyze code
-flutter analyze
-
-# Auto-fix lint issues
-dart fix --apply
-```
 
 ### Adding a New Feature
 
@@ -387,11 +430,13 @@ dart fix --apply
 If you're new to this codebase, read these files in order:
 
 1. `lib/main.dart` — Entry point, see all dependencies
-2. `lib/app.dart` — App shell, initialization flow
+2. `lib/app.dart` — App shell, initialization flow, theme setup
 3. `lib/core/crypto/steam_totp.dart` — The core TOTP algorithm (most critical code)
 4. `lib/core/models/steam_guard_account.dart` — The central data model
 5. `lib/core/repositories/manifest_repository.dart` — File I/O and encryption
-6. `lib/features/home/view_models/home_view_model.dart` — Main app state
+6. `lib/core/repositories/confirmation_repository.dart` — Token refresh + confirmation ops
+7. `lib/features/home/view_models/home_view_model.dart` — Main app state
+8. `lib/features/auth/view_models/authenticator_linker_vm.dart` — Authenticator linking state machine
 
 ### Referencing the C# Original
 
@@ -406,16 +451,4 @@ When modifying crypto or API code, always cross-reference the original C# source
 | Authenticator linking | `../SteamDesktopAuthenticator/lib/SteamAuth/AuthenticatorLinker.cs` |
 | Manifest I/O | `../SteamDesktopAuthenticator/Steam Desktop Authenticator/Manifest.cs` |
 | Login flow | `../SteamDesktopAuthenticator/Steam Desktop Authenticator/LoginForm.cs` |
-
----
-
-## Agent Skills Available
-
-Custom skills in `../.agents/`:
-
-| Skill | File | Use |
-|---|---|---|
-| **flutter-build** | `.agents/flutter-build.md` | Build and run the app |
-| **flutter-test** | `.agents/flutter-test.md` | Run all tests |
-| **flutter-analyze** | `.agents/flutter-analyze.md` | Static analysis + auto-fix |
-| **steam-api-check** | `.agents/steam-api-check.md` | Integration tests against live Steam |
+| Multi-confirm | `../SteamDesktopAuthenticator/lib/SteamAuth/SteamGuardAccount.cs` lines 217-242 |
