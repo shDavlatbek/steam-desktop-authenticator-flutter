@@ -1,4 +1,5 @@
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -6,6 +7,9 @@ import '../../../core/repositories/manifest_repository.dart';
 import '../../../shared/theme/colors.dart';
 import '../../../shared/widgets/loading_overlay.dart';
 import '../view_models/import_view_model.dart';
+
+bool get _isAndroid =>
+    !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
 
 /// First-run welcome screen shown when no accounts exist yet.
 ///
@@ -125,8 +129,15 @@ class _WelcomePageState extends State<WelcomePage> {
                           child: OutlinedButton.icon(
                             onPressed:
                                 vm.isImporting ? null : _importExistingConfig,
-                            icon: const Icon(Icons.folder_open, size: 18),
-                            label: const Text('Import Existing Config'),
+                            icon: Icon(
+                              _isAndroid
+                                  ? Icons.file_copy
+                                  : Icons.folder_open,
+                              size: 18,
+                            ),
+                            label: Text(_isAndroid
+                                ? 'Import .maFile Files'
+                                : 'Import Existing Config'),
                             style: OutlinedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 16),
                             ),
@@ -179,12 +190,16 @@ class _WelcomePageState extends State<WelcomePage> {
   }
 
   Future<void> _importExistingConfig() async {
-    final dirPath = await FilePicker.platform.getDirectoryPath(
-      dialogTitle: 'Select SDA maFiles Directory',
-    );
-    if (dirPath == null) return;
-
-    await _importVm.importFromDirectory(dirPath);
+    if (_isAndroid) {
+      // Android can't traverse SAF directories — use multi-file picker instead.
+      await _importVm.importFromMultiPick();
+    } else {
+      final dirPath = await FilePicker.platform.getDirectoryPath(
+        dialogTitle: 'Select SDA maFiles Directory',
+      );
+      if (dirPath == null) return;
+      await _importVm.importFromDirectory(dirPath);
+    }
 
     // If import was successful, proceed to the home screen.
     if (_importVm.errorMessage == null && _importVm.successMessage != null) {
