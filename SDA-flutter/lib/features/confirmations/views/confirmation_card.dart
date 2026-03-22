@@ -9,30 +9,57 @@ import '../../../shared/theme/colors.dart';
 class ConfirmationCard extends StatelessWidget {
   final Confirmation confirmation;
   final bool isProcessing;
+  final bool isSelected;
+  final bool selectionMode;
   final VoidCallback onAccept;
   final VoidCallback onDeny;
+  final VoidCallback onToggleSelect;
+  final VoidCallback onLongPress;
 
   const ConfirmationCard({
     super.key,
     required this.confirmation,
     required this.isProcessing,
+    this.isSelected = false,
+    this.selectionMode = false,
     required this.onAccept,
     required this.onDeny,
+    required this.onToggleSelect,
+    required this.onLongPress,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ── Header row: icon + headline ──────────────────────────
-            Row(
+    return GestureDetector(
+      onLongPress: onLongPress,
+      child: Card(
+        shape: isSelected
+            ? RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(
+                    color: SteamColors.steamBlue.withAlpha(150), width: 2),
+              )
+            : null,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: selectionMode ? onToggleSelect : null,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildIcon(),
-                const SizedBox(width: 12),
+                // ── Header row: checkbox + icon + headline ────────────
+                Row(
+                  children: [
+                    if (selectionMode) ...[
+                      Checkbox(
+                        value: isSelected,
+                        onChanged: (_) => onToggleSelect(),
+                      ),
+                      const SizedBox(width: 4),
+                    ],
+                    _buildIcon(),
+                    const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -78,50 +105,53 @@ class ConfirmationCard extends StatelessWidget {
                 ),
             ],
 
-            const SizedBox(height: 16),
-
-            // ── Action buttons ───────────────────────────────────────
-            if (isProcessing)
-              const Center(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 8),
-                  child: SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                ),
-              )
-            else
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: onAccept,
-                      icon: const Icon(Icons.check, size: 18),
-                      label: Text(confirmation.accept ?? 'Accept'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: SteamColors.steamGreen,
-                        foregroundColor: Colors.white,
+            // ── Action buttons (hidden in selection mode) ────────────
+              if (!selectionMode) ...[
+                const SizedBox(height: 16),
+                if (isProcessing)
+                  const Center(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8),
+                      child: SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(strokeWidth: 2),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: onDeny,
-                      icon: const Icon(Icons.close, size: 18),
-                      label: Text(confirmation.cancel ?? 'Deny'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: SteamColors.error,
-                        foregroundColor: Colors.white,
+                  )
+                else
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: onAccept,
+                          icon: const Icon(Icons.check, size: 18),
+                          label: Text(confirmation.accept ?? 'Accept'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: SteamColors.steamGreen,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
                       ),
-                    ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: onDeny,
+                          icon: const Icon(Icons.close, size: 18),
+                          label: Text(confirmation.cancel ?? 'Deny'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: SteamColors.error,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-          ],
+              ],
+            ],
+          ),
         ),
+      ),
       ),
     );
   }

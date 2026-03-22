@@ -8,7 +8,7 @@ import '../view_models/confirmation_view_model.dart';
 import 'confirmation_card.dart';
 
 /// Page that displays all pending Steam confirmations for a given account
-/// and allows the user to accept or deny each one.
+/// and allows the user to accept or deny each one, or select multiple.
 class ConfirmationPage extends StatefulWidget {
   final SteamGuardAccount account;
 
@@ -40,99 +40,223 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider.value(
       value: _viewModel,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Confirmations'),
-          actions: [
-            Consumer<ConfirmationViewModel>(
-              builder: (_, vm, _) => Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (vm.confirmations.length > 1) ...[
-                    IconButton(
-                      icon: const Icon(Icons.done_all, size: 22),
-                      tooltip: 'Accept All',
-                      onPressed: vm.isLoading
-                          ? null
-                          : () => _confirmBulkAction(
-                                context, vm, accept: true),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.clear_all, size: 22),
-                      tooltip: 'Deny All',
-                      onPressed: vm.isLoading
-                          ? null
-                          : () => _confirmBulkAction(
-                                context, vm, accept: false),
-                    ),
-                  ],
-                  IconButton(
-                    icon: const Icon(Icons.refresh),
-                    tooltip: 'Refresh',
-                    onPressed: vm.isLoading
-                        ? null
-                        : () => vm.loadConfirmations(widget.account),
-                  ),
-                ],
-              ),
-            ),
-          ],
+      child: Consumer<ConfirmationViewModel>(
+        builder: (context, vm, _) {
+          return Scaffold(
+            appBar: vm.selectionMode
+                ? _buildSelectionAppBar(context, vm)
+                : _buildNormalAppBar(context, vm),
+            body: _buildBody(context, vm),
+            bottomNavigationBar:
+                vm.selectionMode ? _buildSelectionBar(context, vm) : null,
+          );
+        },
+      ),
+    );
+  }
+
+  // ── Normal app bar ─────────────────────────────────────────────────
+
+  PreferredSizeWidget _buildNormalAppBar(
+      BuildContext context, ConfirmationViewModel vm) {
+    return AppBar(
+      title: const Text('Confirmations'),
+      actions: [
+        if (vm.confirmations.length > 1)
+          IconButton(
+            icon: const Icon(Icons.checklist, size: 22),
+            tooltip: 'Select',
+            onPressed: () => vm.selectAll(),
+          ),
+        IconButton(
+          icon: const Icon(Icons.refresh),
+          tooltip: 'Refresh',
+          onPressed: vm.isLoading
+              ? null
+              : () => vm.loadConfirmations(widget.account),
         ),
-        body: Consumer<ConfirmationViewModel>(
-          builder: (context, vm, _) {
-            // ── Loading state ────────────────────────────────────────
-            if (vm.isLoading && vm.confirmations.isEmpty) {
-              return const Center(child: CircularProgressIndicator());
-            }
+      ],
+    );
+  }
 
-            // ── Error state ──────────────────────────────────────────
-            if (vm.errorMessage != null && vm.confirmations.isEmpty) {
-              return _buildErrorState(vm);
-            }
+  // ── Selection app bar ──────────────────────────────────────────────
 
-            // ── Empty state ──────────────────────────────────────────
-            if (vm.confirmations.isEmpty) {
-              return _buildEmptyState();
-            }
+  PreferredSizeWidget _buildSelectionAppBar(
+      BuildContext context, ConfirmationViewModel vm) {
+    final allSelected =
+        vm.selectedCount == vm.confirmations.length;
+    return AppBar(
+      leading: IconButton(
+        icon: const Icon(Icons.close),
+        onPressed: () {
+          vm.clearSelection();
+          // Stay on the page — don't pop
+        },
+      ),
+      title: Text('${vm.selectedCount} selected'),
+      actions: [
+        IconButton(
+          icon: Icon(allSelected
+              ? Icons.deselect
+              : Icons.select_all),
+          tooltip: allSelected ? 'Deselect All' : 'Select All',
+          onPressed: allSelected
+              ? vm.clearSelection
+              : vm.selectAll,
+        ),
+      ],
+    );
+  }
 
-            // ── Confirmation list ────────────────────────────────────
-            return RefreshIndicator(
-              color: SteamColors.steamBlue,
-              backgroundColor: Theme.of(context).cardColor,
-              onRefresh: () => vm.loadConfirmations(widget.account),
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                itemCount: vm.confirmations.length + _errorBannerCount(vm),
-                itemBuilder: (context, index) {
-                  // Show error banner at top if there's an error but we still
-                  // have cached confirmations.
-                  if (vm.errorMessage != null && index == 0) {
-                    return _buildErrorBanner(vm);
-                  }
+  // ── Body ───────────────────────────────────────────────────────────
 
-                  final confIndex =
-                      vm.errorMessage != null ? index - 1 : index;
-                  final conf = vm.confirmations[confIndex];
+  Widget _buildBody(BuildContext context, ConfirmationViewModel vm) {
+    if (vm.isLoading && vm.confirmations.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
-                  return ConfirmationCard(
-                    confirmation: conf,
-                    isProcessing: vm.isProcessing(conf.id),
-                    onAccept: () =>
-                        vm.acceptConfirmation(widget.account, conf),
-                    onDeny: () =>
-                        vm.denyConfirmation(widget.account, conf),
-                  );
-                },
+    if (vm.errorMessage != null && vm.confirmations.isEmpty) {
+      return _buildErrorState(vm);
+    }
+
+    if (vm.confirmations.isEmpty) {
+      return _buildEmptyState();
+    }
+
+    return RefreshIndicator(
+      color: SteamColors.steamBlue,
+      backgroundColor: Theme.of(context).cardColor,
+      onRefresh: () => vm.loadConfirmations(widget.account),
+      child: ListView.builder(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+        itemCount: vm.confirmations.length + _errorBannerCount(vm),
+        itemBuilder: (context, index) {
+          if (vm.errorMessage != null && index == 0) {
+            return _buildErrorBanner(vm);
+          }
+
+          final confIndex = vm.errorMessage != null ? index - 1 : index;
+          final conf = vm.confirmations[confIndex];
+
+          return ConfirmationCard(
+            confirmation: conf,
+            isProcessing: vm.isProcessing(conf.id),
+            isSelected: vm.isSelected(conf.id),
+            selectionMode: vm.selectionMode,
+            onAccept: () =>
+                vm.acceptConfirmation(widget.account, conf),
+            onDeny: () =>
+                vm.denyConfirmation(widget.account, conf),
+            onToggleSelect: () => vm.toggleSelection(conf.id),
+            onLongPress: () {
+              if (!vm.selectionMode) {
+                vm.toggleSelection(conf.id);
+              }
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  // ── Selection action bar ───────────────────────────────────────────
+
+  Widget _buildSelectionBar(
+      BuildContext context, ConfirmationViewModel vm) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        border: Border(
+          top: BorderSide(color: Theme.of(context).dividerColor),
+        ),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          child: Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: vm.isLoading
+                      ? null
+                      : () => _confirmSelectedAction(
+                            context, vm, accept: true),
+                  icon: const Icon(Icons.check, size: 18),
+                  label: Text('Accept (${vm.selectedCount})'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: SteamColors.steamGreen,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
               ),
-            );
-          },
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: vm.isLoading
+                      ? null
+                      : () => _confirmSelectedAction(
+                            context, vm, accept: false),
+                  icon: const Icon(Icons.close, size: 18),
+                  label: Text('Deny (${vm.selectedCount})'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: SteamColors.error,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
+  // ── Helpers ────────────────────────────────────────────────────────
+
   int _errorBannerCount(ConfirmationViewModel vm) =>
       vm.errorMessage != null && vm.confirmations.isNotEmpty ? 1 : 0;
+
+  Future<void> _confirmSelectedAction(
+    BuildContext context,
+    ConfirmationViewModel vm, {
+    required bool accept,
+  }) async {
+    final action = accept ? 'accept' : 'deny';
+    final count = vm.selectedCount;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('${accept ? 'Accept' : 'Deny'} $count confirmation(s)?'),
+        content: Text(
+          'Are you sure you want to $action the $count selected confirmation(s)?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor:
+                  accept ? SteamColors.steamGreen : SteamColors.error,
+              foregroundColor: Colors.white,
+            ),
+            child: Text(accept ? 'Accept' : 'Deny'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      if (accept) {
+        await vm.acceptSelected(widget.account);
+      } else {
+        await vm.denySelected(widget.account);
+      }
+    }
+  }
 
   Widget _buildErrorState(ConfirmationViewModel vm) {
     return Center(
@@ -141,12 +265,17 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline, size: 48, color: SteamColors.error),
+            const Icon(Icons.error_outline,
+                size: 48, color: SteamColors.error),
             const SizedBox(height: 16),
             Text(
               vm.errorMessage!,
               textAlign: TextAlign.center,
-              style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withAlpha(150)),
+              style: TextStyle(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withAlpha(150)),
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
@@ -185,53 +314,16 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
             Text(
               'There are no pending confirmations for this account.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withAlpha(150)),
+              style: TextStyle(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withAlpha(150)),
             ),
           ],
         ),
       ),
     );
-  }
-
-  Future<void> _confirmBulkAction(
-    BuildContext context,
-    ConfirmationViewModel vm, {
-    required bool accept,
-  }) async {
-    final action = accept ? 'accept' : 'deny';
-    final count = vm.confirmations.length;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('${accept ? 'Accept' : 'Deny'} All'),
-        content: Text(
-          'Are you sure you want to $action all $count confirmation(s)?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor:
-                  accept ? SteamColors.steamGreen : SteamColors.error,
-              foregroundColor: Colors.white,
-            ),
-            child: Text('${accept ? 'Accept' : 'Deny'} All'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true) {
-      if (accept) {
-        await vm.acceptAll(widget.account);
-      } else {
-        await vm.denyAll(widget.account);
-      }
-    }
   }
 
   Widget _buildErrorBanner(ConfirmationViewModel vm) {
@@ -251,7 +343,8 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
           Expanded(
             child: Text(
               vm.errorMessage!,
-              style: const TextStyle(color: SteamColors.error, fontSize: 13),
+              style:
+                  const TextStyle(color: SteamColors.error, fontSize: 13),
             ),
           ),
         ],

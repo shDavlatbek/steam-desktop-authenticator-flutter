@@ -21,8 +21,40 @@ class ConfirmationViewModel extends ChangeNotifier {
   /// The set of confirmation IDs currently being processed (accept/deny).
   final Set<String> _processingIds = {};
 
+  /// The set of confirmation IDs currently selected by the user.
+  final Set<String> _selectedIds = {};
+  bool _selectionMode = false;
+
+  bool get selectionMode => _selectionMode;
+  int get selectedCount => _selectedIds.length;
+
   bool isProcessing(String confirmationId) =>
       _processingIds.contains(confirmationId);
+
+  bool isSelected(String confirmationId) =>
+      _selectedIds.contains(confirmationId);
+
+  void toggleSelection(String confirmationId) {
+    _selectionMode = true;
+    if (_selectedIds.contains(confirmationId)) {
+      _selectedIds.remove(confirmationId);
+    } else {
+      _selectedIds.add(confirmationId);
+    }
+    notifyListeners();
+  }
+
+  void selectAll() {
+    _selectionMode = true;
+    _selectedIds.addAll(confirmations.map((c) => c.id));
+    notifyListeners();
+  }
+
+  void clearSelection() {
+    _selectionMode = false;
+    _selectedIds.clear();
+    notifyListeners();
+  }
 
   /// Fetches all pending confirmations for [account].
   Future<void> loadConfirmations(SteamGuardAccount account) async {
@@ -83,6 +115,68 @@ class ConfirmationViewModel extends ChangeNotifier {
     } catch (e, st) {
       errorMessage = e.toString();
       _log.error('ConfirmationVM', 'Bulk accept failed: $e',
+          detail: st.toString());
+      _processingIds.clear();
+      notifyListeners();
+    }
+  }
+
+  /// Accepts only the selected confirmations.
+  Future<void> acceptSelected(SteamGuardAccount account) async {
+    final selected = confirmations
+        .where((c) => _selectedIds.contains(c.id))
+        .toList();
+    if (selected.isEmpty) return;
+    final count = selected.length;
+    for (final c in selected) {
+      _processingIds.add(c.id);
+    }
+    notifyListeners();
+    try {
+      final success = await _confirmationRepo.acceptMultipleConfirmations(
+          account, selected);
+      if (!success) {
+        errorMessage = 'Failed to accept selected confirmations.';
+      } else {
+        _log.info('ConfirmationVM', 'Accepted $count selected confirmations');
+      }
+      _processingIds.clear();
+      _selectedIds.clear();
+      await loadConfirmations(account);
+    } catch (e, st) {
+      errorMessage = e.toString();
+      _log.error('ConfirmationVM', 'Accept selected failed: $e',
+          detail: st.toString());
+      _processingIds.clear();
+      notifyListeners();
+    }
+  }
+
+  /// Denies only the selected confirmations.
+  Future<void> denySelected(SteamGuardAccount account) async {
+    final selected = confirmations
+        .where((c) => _selectedIds.contains(c.id))
+        .toList();
+    if (selected.isEmpty) return;
+    final count = selected.length;
+    for (final c in selected) {
+      _processingIds.add(c.id);
+    }
+    notifyListeners();
+    try {
+      final success = await _confirmationRepo.denyMultipleConfirmations(
+          account, selected);
+      if (!success) {
+        errorMessage = 'Failed to deny selected confirmations.';
+      } else {
+        _log.info('ConfirmationVM', 'Denied $count selected confirmations');
+      }
+      _processingIds.clear();
+      _selectedIds.clear();
+      await loadConfirmations(account);
+    } catch (e, st) {
+      errorMessage = e.toString();
+      _log.error('ConfirmationVM', 'Deny selected failed: $e',
           detail: st.toString());
       _processingIds.clear();
       notifyListeners();
