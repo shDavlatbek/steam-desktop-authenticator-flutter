@@ -16,6 +16,7 @@ class SettingsViewModel extends ChangeNotifier {
   bool autoConfirmMarketTransactions = false;
   bool autoConfirmTrades = false;
   bool debugMode = false;
+  bool darkMode = true;
 
   bool isLoading = false;
   bool isSaving = false;
@@ -35,6 +36,7 @@ class SettingsViewModel extends ChangeNotifier {
       autoConfirmMarketTransactions = manifest.autoConfirmMarketTransactions;
       autoConfirmTrades = manifest.autoConfirmTrades;
       debugMode = manifest.debugMode;
+      darkMode = manifest.darkMode;
       DebugLogger().setEnabled(debugMode);
     } catch (e) {
       errorMessage = e.toString();
@@ -57,6 +59,7 @@ class SettingsViewModel extends ChangeNotifier {
       manifest.autoConfirmMarketTransactions = autoConfirmMarketTransactions;
       manifest.autoConfirmTrades = autoConfirmTrades;
       manifest.debugMode = debugMode;
+      manifest.darkMode = darkMode;
       final saved = await _manifestRepo.save();
       if (saved) {
         successMessage = 'Settings saved successfully.';
@@ -100,6 +103,11 @@ class SettingsViewModel extends ChangeNotifier {
   void setDebugMode(bool value) {
     debugMode = value;
     DebugLogger().setEnabled(value);
+    notifyListeners();
+  }
+
+  void setDarkMode(bool value) {
+    darkMode = value;
     notifyListeners();
   }
 }

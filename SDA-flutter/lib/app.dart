@@ -9,17 +9,24 @@ import 'features/home/view_models/home_view_model.dart';
 import 'features/home/views/home_page.dart';
 import 'features/import_export/views/welcome_page.dart';
 import 'shared/theme/app_theme.dart';
+import 'shared/theme/theme_notifier.dart';
 
 class SdaApp extends StatelessWidget {
   const SdaApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Steam Desktop Authenticator',
-      theme: AppTheme.darkTheme,
-      debugShowCheckedModeBanner: false,
-      home: const AppShell(),
+    return Consumer<ThemeNotifier>(
+      builder: (context, themeNotifier, _) {
+        return MaterialApp(
+          title: 'Steam Desktop Authenticator',
+          theme: AppTheme.lightTheme,
+          darkTheme: AppTheme.darkTheme,
+          themeMode: themeNotifier.themeMode,
+          debugShowCheckedModeBanner: false,
+          home: const AppShell(),
+        );
+      },
     );
   }
 }
@@ -51,6 +58,9 @@ class _AppShellState extends State<AppShell> {
       final manifestRepo = context.read<ManifestRepository>();
       final manifest = await manifestRepo.getManifest();
       DebugLogger().setEnabled(manifest.debugMode);
+      if (mounted) {
+        context.read<ThemeNotifier>().setDark(manifest.darkMode);
+      }
 
       setState(() {
         _isFirstRun = manifest.firstRun && manifest.entries.isEmpty;

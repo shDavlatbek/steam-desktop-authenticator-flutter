@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../../core/repositories/manifest_repository.dart';
 import '../../../core/services/debug_logger.dart';
 import '../../../shared/theme/colors.dart';
+import '../../../shared/theme/theme_notifier.dart';
 import '../view_models/settings_view_model.dart';
 import 'debug_log_page.dart';
 
@@ -59,136 +60,184 @@ class _SettingsPageState extends State<SettingsPage> {
               return const Center(child: CircularProgressIndicator());
             }
 
-            return SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // ── Periodic Checking section ──────────────────────
-                  _sectionHeader('Periodic Checking'),
-                  const SizedBox(height: 8),
-                  _buildSwitchTile(
-                    title: 'Enable periodic confirmation checking',
-                    subtitle:
-                        'Automatically check for new confirmations at a regular interval.',
-                    value: vm.periodicChecking,
-                    onChanged: vm.setPeriodicChecking,
-                  ),
-                  const SizedBox(height: 8),
-                  _buildIntervalField(vm),
-                  const SizedBox(height: 8),
-                  _buildSwitchTile(
-                    title: 'Check all accounts',
-                    subtitle:
-                        'When enabled, periodic checking applies to every linked account.',
-                    value: vm.checkAllAccounts,
-                    onChanged: vm.setCheckAllAccounts,
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // ── Auto-Confirm section ───────────────────────────
-                  _sectionHeader('Auto-Confirm'),
-                  const SizedBox(height: 8),
-                  _buildAutoConfirmWarning(),
-                  const SizedBox(height: 12),
-                  _buildSwitchTile(
-                    title: 'Auto-confirm market transactions',
-                    subtitle:
-                        'Automatically accept Steam Community Market confirmations.',
-                    value: vm.autoConfirmMarketTransactions,
-                    onChanged: (val) => _handleAutoConfirmToggle(
-                      context,
-                      value: val,
-                      label: 'market transactions',
-                      onConfirm: () =>
-                          vm.setAutoConfirmMarketTransactions(val),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  _buildSwitchTile(
-                    title: 'Auto-confirm trades',
-                    subtitle:
-                        'Automatically accept trade offer confirmations.',
-                    value: vm.autoConfirmTrades,
-                    onChanged: (val) => _handleAutoConfirmToggle(
-                      context,
-                      value: val,
-                      label: 'trades',
-                      onConfirm: () => vm.setAutoConfirmTrades(val),
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // ── Debug section ────────────────────────────────────
-                  _sectionHeader('Debug'),
-                  const SizedBox(height: 8),
-                  _buildSwitchTile(
-                    title: 'Debug mode',
-                    subtitle:
-                        'Log HTTP requests, responses, and internal operations for troubleshooting.',
-                    value: vm.debugMode,
-                    onChanged: vm.setDebugMode,
-                  ),
-                  if (vm.debugMode) ...[
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) => const DebugLogPage()),
+            return Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // ── Appearance section ──────────────────────────
+                        _sectionHeader('Appearance'),
+                        const SizedBox(height: 8),
+                        _buildSwitchTile(
+                          title: 'Dark mode',
+                          subtitle: 'Switch between dark and light theme.',
+                          value: vm.darkMode,
+                          onChanged: (val) {
+                            vm.setDarkMode(val);
+                            context.read<ThemeNotifier>().setDark(val);
+                          },
                         ),
-                        icon: const Icon(Icons.article_outlined, size: 18),
-                        label: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Text('View Logs'),
-                            const SizedBox(width: 8),
-                            ListenableBuilder(
-                              listenable: DebugLogger(),
-                              builder: (_, _) {
-                                final count = DebugLogger().entries.length;
-                                if (count == 0) return const SizedBox.shrink();
-                                return Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 6, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: SteamColors.steamBlue.withAlpha(40),
-                                    borderRadius: BorderRadius.circular(10),
+
+                        const SizedBox(height: 24),
+
+                        // ── Periodic Checking section ──────────────────
+                        _sectionHeader('Periodic Checking'),
+                        const SizedBox(height: 8),
+                        _buildSwitchTile(
+                          title: 'Enable periodic confirmation checking',
+                          subtitle:
+                              'Automatically check for new confirmations at a regular interval.',
+                          value: vm.periodicChecking,
+                          onChanged: vm.setPeriodicChecking,
+                        ),
+                        const SizedBox(height: 8),
+                        _buildIntervalField(vm),
+                        const SizedBox(height: 8),
+                        _buildSwitchTile(
+                          title: 'Check all accounts',
+                          subtitle:
+                              'When enabled, periodic checking applies to every linked account.',
+                          value: vm.checkAllAccounts,
+                          onChanged: vm.setCheckAllAccounts,
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        // ── Auto-Confirm section ───────────────────────
+                        _sectionHeader('Auto-Confirm'),
+                        const SizedBox(height: 8),
+                        _buildAutoConfirmWarning(),
+                        const SizedBox(height: 12),
+                        _buildSwitchTile(
+                          title: 'Auto-confirm market transactions',
+                          subtitle:
+                              'Automatically accept Steam Community Market confirmations.',
+                          value: vm.autoConfirmMarketTransactions,
+                          onChanged: (val) => _handleAutoConfirmToggle(
+                            context,
+                            value: val,
+                            label: 'market transactions',
+                            onConfirm: () =>
+                                vm.setAutoConfirmMarketTransactions(val),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        _buildSwitchTile(
+                          title: 'Auto-confirm trades',
+                          subtitle:
+                              'Automatically accept trade offer confirmations.',
+                          value: vm.autoConfirmTrades,
+                          onChanged: (val) => _handleAutoConfirmToggle(
+                            context,
+                            value: val,
+                            label: 'trades',
+                            onConfirm: () => vm.setAutoConfirmTrades(val),
+                          ),
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        // ── Debug section ──────────────────────────────
+                        _sectionHeader('Debug'),
+                        const SizedBox(height: 8),
+                        _buildSwitchTile(
+                          title: 'Debug mode',
+                          subtitle:
+                              'Log HTTP requests, responses, and internal operations for troubleshooting.',
+                          value: vm.debugMode,
+                          onChanged: vm.setDebugMode,
+                        ),
+                        if (vm.debugMode) ...[
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              onPressed: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (_) => const DebugLogPage()),
+                              ),
+                              icon: const Icon(Icons.article_outlined,
+                                  size: 18),
+                              label: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Text('View Logs'),
+                                  const SizedBox(width: 8),
+                                  ListenableBuilder(
+                                    listenable: DebugLogger(),
+                                    builder: (_, _) {
+                                      final count =
+                                          DebugLogger().entries.length;
+                                      if (count == 0) {
+                                        return const SizedBox.shrink();
+                                      }
+                                      return Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: SteamColors.steamBlue
+                                              .withAlpha(40),
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                        ),
+                                        child: Text(
+                                          '$count',
+                                          style: const TextStyle(
+                                              fontSize: 11,
+                                              color: SteamColors.steamBlue),
+                                        ),
+                                      );
+                                    },
                                   ),
-                                  child: Text(
-                                    '$count',
-                                    style: const TextStyle(
-                                        fontSize: 11,
-                                        color: SteamColors.steamBlue),
-                                  ),
-                                );
-                              },
+                                ],
+                              ),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
+
+                        const SizedBox(height: 16),
+
+                        // ── Messages ────────────────────────────────────
+                        if (vm.errorMessage != null)
+                          _messageBanner(vm.errorMessage!, isError: true),
+                        if (vm.successMessage != null)
+                          _messageBanner(vm.successMessage!,
+                              isError: false),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // ── Sticky save button ──────────────────────────────────
+                Container(
+                  width: double.infinity,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).scaffoldBackgroundColor,
+                    border: Border(
+                      top: BorderSide(
+                        color: Theme.of(context).dividerColor,
                       ),
                     ),
-                  ],
-
-                  const SizedBox(height: 32),
-
-                  // ── Messages ────────────────────────────────────────
-                  if (vm.errorMessage != null)
-                    _messageBanner(vm.errorMessage!, isError: true),
-                  if (vm.successMessage != null)
-                    _messageBanner(vm.successMessage!, isError: false),
-
-                  const SizedBox(height: 16),
-
-                  // ── Save button ─────────────────────────────────────
-                  SizedBox(
-                    width: double.infinity,
+                  ),
+                  child: SafeArea(
+                    top: false,
                     child: ElevatedButton(
-                      onPressed: vm.isSaving ? null : vm.saveSettings,
+                      onPressed: vm.isSaving
+                          ? null
+                          : () async {
+                              await vm.saveSettings();
+                              if (context.mounted) {
+                                context
+                                    .read<ThemeNotifier>()
+                                    .setDark(vm.darkMode);
+                              }
+                            },
                       child: vm.isSaving
                           ? const SizedBox(
                               width: 20,
@@ -199,8 +248,8 @@ class _SettingsPageState extends State<SettingsPage> {
                           : const Text('Save Settings'),
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             );
           },
         ),

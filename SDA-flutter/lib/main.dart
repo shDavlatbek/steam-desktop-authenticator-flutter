@@ -10,6 +10,7 @@ import 'core/services/steam_phone_service.dart';
 import 'core/services/steam_time_service.dart';
 import 'core/services/steam_user_service.dart';
 import 'core/services/steam_web_service.dart';
+import 'shared/theme/theme_notifier.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -42,6 +43,7 @@ void main() {
         Provider<ManifestRepository>.value(value: manifestRepo),
         Provider<AccountRepository>.value(value: accountRepo),
         Provider<ConfirmationRepository>.value(value: confirmationRepo),
+        ChangeNotifierProvider(create: (_) => ThemeNotifier(isDark: true)),
       ],
       child: const SdaApp(),
     ),
