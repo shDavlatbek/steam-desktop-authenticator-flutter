@@ -271,15 +271,23 @@ class _HomePageState extends State<HomePage> {
     switch (action) {
       case 'login_again':
         if (vm.currentAccount == null) return;
+        final account = vm.currentAccount!;
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (_) => LoginPage(
               loginType: LoginType.refresh,
-              account: vm.currentAccount,
+              account: account,
             ),
           ),
-        ).then((_) => vm.loadAccounts());
+        ).then((result) async {
+          if (result != null) {
+            // Login returned a new session — update account and save to disk.
+            account.session = result;
+            await vm.manifestRepo.saveAccount(account);
+          }
+          await vm.loadAccounts();
+        });
         break;
 
       case 'remove':
