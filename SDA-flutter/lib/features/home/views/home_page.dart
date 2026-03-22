@@ -6,6 +6,7 @@ import '../../../features/auth/view_models/login_view_model.dart';
 import '../../../features/auth/views/login_page.dart';
 import '../../../features/confirmations/views/confirmation_page.dart';
 import '../../../features/encryption/views/encryption_setup_page.dart';
+import '../../../features/import_export/views/export_page.dart';
 import '../../../features/import_export/views/import_page.dart';
 import '../../../features/settings/views/settings_page.dart';
 import '../../../shared/theme/colors.dart';
@@ -100,6 +101,13 @@ class _HomePageState extends State<HomePage> {
               child: _MenuRow(
                 icon: Icons.file_download_outlined,
                 label: 'Import Account',
+              ),
+            ),
+            const PopupMenuItem(
+              value: 'export',
+              child: _MenuRow(
+                icon: Icons.file_upload_outlined,
+                label: 'Export Accounts',
               ),
             ),
             const PopupMenuItem(
@@ -295,6 +303,13 @@ class _HomePageState extends State<HomePage> {
           context,
           MaterialPageRoute(builder: (_) => const ImportPage()),
         ).then((_) => vm.loadAccounts());
+        break;
+
+      case 'export':
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const ExportPage()),
+        );
         break;
 
       case 'settings':

@@ -66,85 +66,92 @@ class _TotpContent extends StatelessWidget {
             ),
             const SizedBox(height: 24),
 
-            // ── Countdown ring + code ──────────────────────────────────
-            SizedBox(
-              width: 180,
-              height: 180,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  // Background ring
-                  SizedBox(
-                    width: 180,
-                    height: 180,
-                    child: CircularProgressIndicator(
-                      value: 1.0,
-                      strokeWidth: 6,
-                      color: SteamColors.surfaceColor,
-                    ),
-                  ),
-                  // Animated progress ring
-                  SizedBox(
-                    width: 180,
-                    height: 180,
-                    child: TweenAnimationBuilder<double>(
-                      tween: Tween(begin: progress, end: progress),
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeInOut,
-                      builder: (context, value, _) {
-                        return CircularProgressIndicator(
-                          value: value,
-                          strokeWidth: 6,
-                          strokeCap: StrokeCap.round,
-                          color: isLow
-                              ? SteamColors.warning
-                              : SteamColors.steamBlue,
-                        );
-                      },
-                    ),
-                  ),
-                  // Code + seconds
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
+            // ── Countdown ring + code (tap to copy) ──────────────────
+            GestureDetector(
+              onTap: code.isNotEmpty ? onCopy : null,
+              child: MouseRegion(
+                cursor: code.isNotEmpty
+                    ? SystemMouseCursors.click
+                    : SystemMouseCursors.basic,
+                child: SizedBox(
+                  width: 180,
+                  height: 180,
+                  child: Stack(
+                    alignment: Alignment.center,
                     children: [
-                      Text(
-                        code.isNotEmpty ? code : '-----',
-                        style: TextStyle(
-                          fontFamily: 'monospace',
-                          fontSize: 28,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 6,
-                          color: code.isNotEmpty
-                              ? SteamColors.textPrimary
-                              : SteamColors.textSecondary,
+                      // Background ring
+                      SizedBox(
+                        width: 180,
+                        height: 180,
+                        child: CircularProgressIndicator(
+                          value: 1.0,
+                          strokeWidth: 6,
+                          color: SteamColors.surfaceColor,
                         ),
                       ),
-                      const SizedBox(height: 6),
-                      Text(
-                        '${secondsRemaining}s',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: isLow
-                              ? SteamColors.warning
-                              : SteamColors.textSecondary,
+                      // Animated progress ring
+                      SizedBox(
+                        width: 180,
+                        height: 180,
+                        child: TweenAnimationBuilder<double>(
+                          tween: Tween(begin: progress, end: progress),
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeInOut,
+                          builder: (context, value, _) {
+                            return CircularProgressIndicator(
+                              value: value,
+                              strokeWidth: 6,
+                              strokeCap: StrokeCap.round,
+                              color: isLow
+                                  ? SteamColors.warning
+                                  : SteamColors.steamBlue,
+                            );
+                          },
                         ),
+                      ),
+                      // Code + seconds
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            code.isNotEmpty ? code : '-----',
+                            style: TextStyle(
+                              fontFamily: 'monospace',
+                              fontSize: 28,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 6,
+                              color: code.isNotEmpty
+                                  ? SteamColors.textPrimary
+                                  : SteamColors.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            '${secondsRemaining}s',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: isLow
+                                  ? SteamColors.warning
+                                  : SteamColors.textSecondary,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ],
+                ),
               ),
             ),
 
-            const SizedBox(height: 28),
+            const SizedBox(height: 12),
 
-            // ── Copy button ────────────────────────────────────────────
-            SizedBox(
-              width: 200,
-              child: ElevatedButton.icon(
-                onPressed: code.isNotEmpty ? onCopy : null,
-                icon: const Icon(Icons.copy, size: 18),
-                label: const Text('Copy Code'),
+            // ── Tap hint ─────────────────────────────────────────────
+            Text(
+              code.isNotEmpty ? 'Tap to copy' : '',
+              style: const TextStyle(
+                color: SteamColors.textSecondary,
+                fontSize: 12,
               ),
             ),
           ],

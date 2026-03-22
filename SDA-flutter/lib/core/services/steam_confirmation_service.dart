@@ -61,29 +61,20 @@ class SteamConfirmationService {
     String queryParams,
     Map<String, String> cookies,
   ) async {
-    final url = '${ApiEndpoints.confirmationMultiAjaxOp}?$queryParams';
+    // C# sends everything as form-encoded POST body to the bare URL.
+    // op + auth query params + repeated cid[]/ck[] all go in the body.
+    final url = ApiEndpoints.confirmationMultiAjaxOp;
 
-    // Build the form body with repeated cid[] and ck[] entries.
-    final bodyParts = <String>['op=$op'];
+    final bodyParts = <String>['op=$op', queryParams];
     for (final conf in confs) {
       bodyParts.add('cid[]=${conf['id']}');
       bodyParts.add('ck[]=${conf['nonce']}');
     }
 
-    // The Steam endpoint expects repeated `cid[]` / `ck[]` keys which cannot
-    // be represented in a Map<String, String>. We encode them into the URL
-    // query string and POST with the operation in the body.
-    final queryWithConfs = StringBuffer(url);
-    for (final conf in confs) {
-      queryWithConfs
-        ..write('&cid[]=${conf['id']}')
-        ..write('&ck[]=${conf['nonce']}');
-    }
-
-    final responseBody = await web.postRequest(
-      queryWithConfs.toString(),
+    final responseBody = await web.postRawBody(
+      url,
       cookies: cookies,
-      body: {'op': op},
+      body: bodyParts.join('&'),
     );
 
     final json = jsonDecode(responseBody) as Map<String, dynamic>;

@@ -45,12 +45,35 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
           title: const Text('Confirmations'),
           actions: [
             Consumer<ConfirmationViewModel>(
-              builder: (_, vm, _) => IconButton(
-                icon: const Icon(Icons.refresh),
-                tooltip: 'Refresh',
-                onPressed: vm.isLoading
-                    ? null
-                    : () => vm.loadConfirmations(widget.account),
+              builder: (_, vm, _) => Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (vm.confirmations.length > 1) ...[
+                    IconButton(
+                      icon: const Icon(Icons.done_all, size: 22),
+                      tooltip: 'Accept All',
+                      onPressed: vm.isLoading
+                          ? null
+                          : () => _confirmBulkAction(
+                                context, vm, accept: true),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.clear_all, size: 22),
+                      tooltip: 'Deny All',
+                      onPressed: vm.isLoading
+                          ? null
+                          : () => _confirmBulkAction(
+                                context, vm, accept: false),
+                    ),
+                  ],
+                  IconButton(
+                    icon: const Icon(Icons.refresh),
+                    tooltip: 'Refresh',
+                    onPressed: vm.isLoading
+                        ? null
+                        : () => vm.loadConfirmations(widget.account),
+                  ),
+                ],
               ),
             ),
           ],
@@ -168,6 +191,47 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
         ),
       ),
     );
+  }
+
+  Future<void> _confirmBulkAction(
+    BuildContext context,
+    ConfirmationViewModel vm, {
+    required bool accept,
+  }) async {
+    final action = accept ? 'accept' : 'deny';
+    final count = vm.confirmations.length;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('${accept ? 'Accept' : 'Deny'} All'),
+        content: Text(
+          'Are you sure you want to $action all $count confirmation(s)?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor:
+                  accept ? SteamColors.steamGreen : SteamColors.error,
+              foregroundColor: Colors.white,
+            ),
+            child: Text('${accept ? 'Accept' : 'Deny'} All'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      if (accept) {
+        await vm.acceptAll(widget.account);
+      } else {
+        await vm.denyAll(widget.account);
+      }
+    }
   }
 
   Widget _buildErrorBanner(ConfirmationViewModel vm) {

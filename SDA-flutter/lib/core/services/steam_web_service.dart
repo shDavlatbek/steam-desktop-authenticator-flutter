@@ -62,6 +62,39 @@ class SteamWebService {
     }
   }
 
+  /// POST with a raw form-encoded string body.
+  /// Used for endpoints like multiajaxop that need repeated keys (cid[], ck[]).
+  Future<String> postRawBody(
+    String url, {
+    Map<String, String>? cookies,
+    required String body,
+  }) async {
+    final headers = <String, String>{
+      'User-Agent': SteamGuardConstants.mobileAppUserAgent,
+      'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+    };
+    if (cookies != null && cookies.isNotEmpty) {
+      headers['Cookie'] =
+          cookies.entries.map((e) => '${e.key}=${e.value}').join('; ');
+    }
+
+    _log.http('SteamWeb', 'POST (raw) $url', detail: 'Body: $body');
+
+    try {
+      final response = await _client.post(
+        Uri.parse(url),
+        headers: headers,
+        body: body,
+      );
+      _log.http('SteamWeb', 'POST ${response.statusCode}',
+          detail: _truncate(response.body));
+      return response.body;
+    } catch (e, st) {
+      _log.error('SteamWeb', 'POST failed: $e', detail: st.toString());
+      rethrow;
+    }
+  }
+
   /// Truncate response body for logging to avoid flooding memory.
   String _truncate(String s, [int max = 2000]) =>
       s.length > max ? '${s.substring(0, max)}...[truncated]' : s;

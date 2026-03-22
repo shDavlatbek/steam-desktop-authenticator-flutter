@@ -61,6 +61,62 @@ class ConfirmationViewModel extends ChangeNotifier {
     }
   }
 
+  /// Accepts all current confirmations in a single bulk request.
+  Future<void> acceptAll(SteamGuardAccount account) async {
+    if (confirmations.isEmpty) return;
+    final count = confirmations.length;
+    for (final c in confirmations) {
+      _processingIds.add(c.id);
+    }
+    notifyListeners();
+    try {
+      final success = await _confirmationRepo.acceptMultipleConfirmations(
+          account, List.of(confirmations));
+      if (!success) {
+        _log.error('ConfirmationVM', 'Bulk accept returned false');
+        errorMessage = 'Failed to accept confirmations.';
+      } else {
+        _log.info('ConfirmationVM', 'Bulk accepted $count confirmations');
+      }
+      _processingIds.clear();
+      await loadConfirmations(account);
+    } catch (e, st) {
+      errorMessage = e.toString();
+      _log.error('ConfirmationVM', 'Bulk accept failed: $e',
+          detail: st.toString());
+      _processingIds.clear();
+      notifyListeners();
+    }
+  }
+
+  /// Denies all current confirmations in a single bulk request.
+  Future<void> denyAll(SteamGuardAccount account) async {
+    if (confirmations.isEmpty) return;
+    final count = confirmations.length;
+    for (final c in confirmations) {
+      _processingIds.add(c.id);
+    }
+    notifyListeners();
+    try {
+      final success = await _confirmationRepo.denyMultipleConfirmations(
+          account, List.of(confirmations));
+      if (!success) {
+        _log.error('ConfirmationVM', 'Bulk deny returned false');
+        errorMessage = 'Failed to deny confirmations.';
+      } else {
+        _log.info('ConfirmationVM', 'Bulk denied $count confirmations');
+      }
+      _processingIds.clear();
+      await loadConfirmations(account);
+    } catch (e, st) {
+      errorMessage = e.toString();
+      _log.error('ConfirmationVM', 'Bulk deny failed: $e',
+          detail: st.toString());
+      _processingIds.clear();
+      notifyListeners();
+    }
+  }
+
   /// Denies a single confirmation and refreshes the list.
   Future<void> denyConfirmation(
     SteamGuardAccount account,
