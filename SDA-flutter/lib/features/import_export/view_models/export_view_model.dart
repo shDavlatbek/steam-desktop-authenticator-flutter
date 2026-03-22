@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
-import 'package:path_provider/path_provider.dart';
 
 import '../../../core/models/manifest.dart';
 import '../../../core/repositories/manifest_repository.dart';
@@ -83,7 +82,8 @@ class ExportViewModel extends ChangeNotifier {
         const JsonEncoder.withIndent('  ').convert(exportManifest.toJson()),
       );
 
-      successMessage = 'Exported $exported account(s) to ${_isAndroid ? 'Downloads' : destPath}';
+      successMessage =
+          'Exported $exported account(s) to $destPath';
     } catch (e) {
       errorMessage = e.toString();
     }
@@ -93,26 +93,41 @@ class ExportViewModel extends ChangeNotifier {
   }
 
   /// Returns a directory path for export.
-  /// On Android uses Downloads directory; on desktop uses a folder picker.
+  /// On Android, writes to /storage/emulated/0/Download/SDA-Export which is
+  /// accessible without special permissions on most devices.
+  /// On desktop, uses a folder picker.
   Future<String?> _pickExportDirectory() async {
     if (_isAndroid) {
-      // On Android, use a subdirectory in external storage Downloads
-      final dirs = await getExternalStorageDirectories(
-          type: StorageDirectory.downloads);
-      if (dirs != null && dirs.isNotEmpty) {
-        final exportDir = Directory('${dirs.first.path}/SDA-Export');
+      // Use the public Downloads directory — writable without
+      // MANAGE_EXTERNAL_STORAGE on Android 10+ for most OEMs.
+      const basePaths = [
+        '/storage/emulated/0/Download',
+        '/sdcard/Download',
+      ];
+
+      for (final base in basePaths) {
+        final dir = Directory(base);
+        if (await dir.exists()) {
+          final exportDir = Directory('$base/SDA-Export');
+          if (!await exportDir.exists()) {
+            await exportDir.create(recursive: true);
+          }
+          return exportDir.path;
+        }
+      }
+
+      // Last resort: try to get it from the environment
+      final envDownload = Platform.environment['EXTERNAL_STORAGE'];
+      if (envDownload != null) {
+        final exportDir = Directory('$envDownload/Download/SDA-Export');
         if (!await exportDir.exists()) {
           await exportDir.create(recursive: true);
         }
         return exportDir.path;
       }
-      // Fallback: app support directory
-      final appDir = await getApplicationSupportDirectory();
-      final exportDir = Directory('${appDir.path}/SDA-Export');
-      if (!await exportDir.exists()) {
-        await exportDir.create(recursive: true);
-      }
-      return exportDir.path;
+
+      errorMessage = 'Could not find Downloads directory.';
+      return null;
     } else {
       return await FilePicker.platform.getDirectoryPath(
         dialogTitle: 'Select Export Directory',
