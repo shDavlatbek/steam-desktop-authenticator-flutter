@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 
 from aiogram import Bot, Dispatcher
@@ -12,6 +13,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 
 from steamguard import WrongPasskeyError
 
+from . import heartbeat
 from .config import Config
 from .handlers import build_router
 from .middlewares import AccessMiddleware
@@ -47,12 +49,19 @@ async def run() -> None:
 
     log.info("Admin is %s; data in %s", config.admin_id, config.data_dir)
 
+    # Runs on the same loop as polling, so it stops beating the moment the
+    # loop stops turning — which is the failure the healthcheck exists to see.
+    pulse = asyncio.create_task(heartbeat.run(config.data_dir), name="heartbeat")
+
     try:
         # Drop anything queued while the bot was down — a stale QR approval is
         # worse than a missed one.
         await bot.delete_webhook(drop_pending_updates=True)
         await dispatcher.start_polling(bot)
     finally:
+        pulse.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await pulse
         await services.stop()
         await bot.session.close()
 

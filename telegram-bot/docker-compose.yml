@@ -1,0 +1,66 @@
+name: sda-bot
+
+services:
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: sda-telegram-bot:latest
+    container_name: sda-bot
+
+    # The bot polls Telegram, so it recovers from network blips on its own.
+    # This is for the cases it cannot recover from: a crash, or the host
+    # rebooting.
+    restart: unless-stopped
+
+    # BOT_TOKEN, ADMIN_ID and SDA_PASSKEY come from .env, which is never baked
+    # into the image (see .dockerignore).
+    env_file:
+      - .env
+
+    environment:
+      # Overrides whatever DATA_DIR .env sets — `environment` wins over
+      # `env_file`, and inside the container the path is always /data.
+      DATA_DIR: /data
+      TZ: ${TZ:-UTC}
+
+    volumes:
+      # maFiles, manifest.json and shares.json. Losing this loses every
+      # authenticator that was not exported — back it up.
+      - sda-data:/data
+
+    healthcheck:
+      # Checks the event loop is still turning, not merely that the process
+      # exists. See bot/heartbeat.py.
+      test: ["CMD", "python", "-m", "bot.healthcheck"]
+      interval: 60s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
+
+    # This process holds every shared_secret it has been given, so it gets no
+    # more privilege than it needs.
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    tmpfs:
+      # Writable scratch for a read-only root. noexec/nosuid so nothing
+      # dropped here can be run.
+      - /tmp:rw,noexec,nosuid,size=64m
+
+    # OpenCV decoding a large photo is the peak; everything else is idle.
+    mem_limit: 512m
+    pids_limit: 256
+
+    logging:
+      driver: json-file
+      options:
+        # Unbounded logs will eventually fill the disk on a long-running bot.
+        max-size: "10m"
+        max-file: "5"
+
+volumes:
+  sda-data:
+    driver: local

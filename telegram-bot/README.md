@@ -37,11 +37,13 @@ servers see the QR images and messages that pass through.
 cd telegram-bot
 python -m venv .venv
 .venv/Scripts/activate        # Windows;  source .venv/bin/activate elsewhere
-pip install -r requirements.txt
+pip install -r requirements-dev.txt   # requirements.txt alone omits pytest
 
 cp .env.example .env          # then fill in BOT_TOKEN and ADMIN_ID
 python -m bot
 ```
+
+To run it in production instead, see [Deploying](#deploying).
 
 `BOT_TOKEN` comes from [@BotFather](https://t.me/BotFather). `ADMIN_ID` is your
 numeric Telegram ID — [@userinfobot](https://t.me/userinfobot) will tell you, or
@@ -168,13 +170,82 @@ telegram-bot/
 `steamguard/` knows nothing about Telegram and `bot/` knows nothing about
 Steam's wire format, so either side can be worked on alone.
 
+## Deploying
+
+```bash
+cd telegram-bot
+cp .env.example .env          # fill in BOT_TOKEN, ADMIN_ID, SDA_PASSKEY
+docker compose up -d --build
+
+docker compose logs -f        # follow
+docker compose ps             # includes health status
+```
+
+**Set `SDA_PASSKEY` before you deploy.** Without it the volume holds every
+`shared_secret` in plaintext, and a server is a much likelier place to lose a
+disk image than a laptop. Check what compose actually resolved:
+
+```bash
+docker compose config | grep SDA_PASSKEY
+```
+
+`DATA_DIR` from `.env` is ignored on purpose — compose pins it to `/data`
+inside the container, because `environment` wins over `env_file`.
+
+### The data volume
+
+`sda-data` holds `manifest.json`, every `.maFile`, and `shares.json`. **Losing
+it loses every authenticator you did not export.** It survives
+`docker compose down`; `down -v` deletes it.
+
+```bash
+# Back it up
+docker run --rm -v sda-bot_sda-data:/data -v "$PWD:/out" alpine \
+  tar czf /out/sda-backup.tar.gz -C /data .
+
+# Restore
+docker run --rm -v sda-bot_sda-data:/data -v "$PWD:/in" alpine \
+  tar xzf /in/sda-backup.tar.gz -C /data
+```
+
+Prefer a host directory? Swap the volume line for `- ./data:/data` and give it
+to the container's user first, or it will start up unable to write:
+
+```bash
+mkdir -p data && sudo chown -R 10001:10001 data
+```
+
+### What the container is allowed to do
+
+It holds every secret you have given it, so it gets as little as possible: a
+non-root user (UID 10001), a read-only root filesystem with a 64 MB `noexec`
+tmpfs for scratch, all capabilities dropped, `no-new-privileges`, and caps of
+512 MB memory and 256 PIDs. It opens no ports — polling is outbound only.
+
+### Health
+
+`restart: unless-stopped` only catches a process that *died*. A polling loop
+that wedges leaves the process alive and the bot useless, so a background task
+touches `/data/.heartbeat` every 30s and the healthcheck fails once it is more
+than 120s stale — Docker then restarts the container. `docker compose ps` shows
+the state; `bot/heartbeat.py` is the mechanism.
+
+### Upgrading
+
+```bash
+git pull && docker compose up -d --build
+```
+
+The volume is untouched, so accounts and shares carry over.
+
 ## Tests
 
 ```bash
+pip install -r requirements-dev.txt
 .venv/Scripts/python -m pytest
 ```
 
-133 tests. The ones worth knowing about:
+146 tests. The ones worth knowing about:
 
 - **`test_dart_parity.py`** — runs the Python crypto against vectors emitted by
   the Flutter implementation and asserts byte equality for TOTP codes,
@@ -198,6 +269,8 @@ Steam's wire format, so either side can be worked on alone.
 - **`test_session_expiry.py`** — that an expired access token is treated as
   routine while an expired refresh token is not, and that a guest is never
   offered an account whose login is dead.
+- **`test_heartbeat.py`** — that a stale heartbeat fails the healthcheck and a
+  fresh one passes, so a wedged bot actually gets restarted.
 
 ## Not included
 
