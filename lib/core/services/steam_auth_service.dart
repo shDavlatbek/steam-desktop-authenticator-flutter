@@ -93,10 +93,57 @@ class SteamAuthService {
     };
   }
 
+  /// Begins a QR-based authentication session.
+  ///
+  /// No credentials are involved: Steam returns a challenge URL that this app
+  /// renders as a QR code, which the user scans and approves in the official
+  /// Steam mobile app. Tokens then arrive through [pollAuthSessionStatus].
+  ///
+  /// [platformType] defaults to `3` (MobileApp) so the issued tokens carry the
+  /// `mobile` audience that the confirmation endpoints require — the same
+  /// platform type [beginAuthSession] uses.
+  ///
+  /// Returns a [Map] containing `'client_id'`, `'challenge_url'`,
+  /// `'request_id'`, `'interval'`, `'version'`, and `'allowed_confirmations'`.
+  Future<Map<String, dynamic>> beginAuthSessionViaQR({
+    String deviceFriendlyName = 'Steam Desktop Authenticator',
+    int platformType = 3,
+  }) async {
+    final responseBody = await _web.postRequest(
+      ApiEndpoints.authBeginSessionViaQR,
+      body: {
+        'device_friendly_name': deviceFriendlyName,
+        'platform_type': platformType.toString(),
+      },
+    );
+
+    final json = jsonDecode(responseBody) as Map<String, dynamic>;
+    final response = json['response'] as Map<String, dynamic>?;
+
+    if (response == null || response['challenge_url'] == null) {
+      throw Exception('Steam did not return a QR challenge.');
+    }
+
+    return {
+      'client_id': response['client_id'].toString(),
+      'challenge_url': response['challenge_url'] as String,
+      'request_id': response['request_id'] as String,
+      'interval': response['interval'],
+      'version': response['version'],
+      'allowed_confirmations': response['allowed_confirmations'],
+    };
+  }
+
   /// Polls the status of an ongoing authentication session.
   ///
-  /// Returns a [Map] containing `'access_token'`, `'refresh_token'`,
-  /// `'account_name'`, and `'new_client_id'` once the session is approved.
+  /// Works for both credential and QR sessions. Returns a [Map] containing
+  /// `'access_token'`, `'refresh_token'`, `'account_name'`, and
+  /// `'new_client_id'` once the session is approved.
+  ///
+  /// For QR sessions two extra keys matter: `'new_challenge_url'` is set when
+  /// Steam rotates the code (the display must be updated to match), and
+  /// `'had_remote_interaction'` becomes `true` once the code has been scanned
+  /// but not yet approved.
   Future<Map<String, dynamic>> pollAuthSessionStatus(
     String clientId,
     String requestId,
@@ -117,6 +164,8 @@ class SteamAuthService {
       'refresh_token': response['refresh_token'] as String?,
       'account_name': response['account_name'] as String?,
       'new_client_id': response['new_client_id']?.toString(),
+      'new_challenge_url': response['new_challenge_url'] as String?,
+      'had_remote_interaction': response['had_remote_interaction'] as bool?,
     };
   }
 

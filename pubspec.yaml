@@ -33,6 +33,14 @@ dependencies:
   tray_manager: ^0.2.3
   cached_network_image: ^3.4.1
 
+  # QR login (Flow A renders, Flow B scans)
+  qr_flutter: ^4.1.0
+  mobile_scanner: ^7.4.0
+  # Decoding a QR from a picked image — pure Dart so it also works on Windows,
+  # where mobile_scanner has no implementation.
+  zxing2: ^0.2.4
+  image: ^4.5.0
+
   # Utility
   uuid: ^4.5.1
   intl: ^0.19.0
@@ -41,6 +49,8 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  # Generates QR images for the decoder round-trip tests.
+  qr: ^3.0.2
   build_runner: ^2.4.14
   json_serializable: ^6.9.4
   mockito: ^5.4.4

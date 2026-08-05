@@ -6,6 +6,8 @@ A cross-platform (Windows, Android) port of [Steam Desktop Authenticator](https:
 
 - **Steam Guard TOTP** — Generate 5-character codes identical to the Steam mobile app
 - **Trade Confirmations** — View, accept, deny (single or bulk) trade and market confirmations
+- **QR Sign-in** — Log in without a password: scan the on-screen code with the Steam mobile app
+- **Approve QR Logins** — Scan a login code with the camera, pick a screenshot of it, or paste its link, then approve it here like the Steam app
 - **Add Authenticator** — Link Steam Guard to accounts directly (no phone number required)
 - **Import / Export** — Import .maFile files or export accounts with manifest.json
 - **Encryption** — AES-256-CBC file encryption compatible with the original C# SDA

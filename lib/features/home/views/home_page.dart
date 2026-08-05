@@ -3,9 +3,11 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/models/steam_guard_account.dart';
+import '../../../core/repositories/login_approval_repository.dart';
 import '../../../features/auth/view_models/login_view_model.dart';
 import '../../../features/auth/views/authenticator_link_page.dart';
 import '../../../features/auth/views/login_page.dart';
+import '../../../features/auth/views/qr_approval_page.dart';
 import '../../../features/confirmations/views/confirmation_page.dart';
 import '../../../features/encryption/views/encryption_setup_page.dart';
 import '../../../features/import_export/views/export_page.dart';
@@ -62,6 +64,15 @@ class _HomePageState extends State<HomePage> {
     return AppBar(
       title: const Text('Steam Desktop Authenticator'),
       actions: [
+        // Approving a QR login is a one-tap action, so it sits beside the
+        // account menu rather than inside it.
+        if (vm.currentAccount != null)
+          IconButton(
+            icon: const Icon(Icons.qr_code_scanner, size: 22),
+            tooltip: 'Approve QR login',
+            onPressed: () => _onAccountAction(context, vm, 'approve_qr'),
+          ),
+
         // Context menu for the currently selected account.
         if (vm.currentAccount != null)
           PopupMenuButton<String>(
@@ -261,6 +272,19 @@ class _HomePageState extends State<HomePage> {
           }
           await vm.loadAccounts();
         });
+        break;
+
+      case 'approve_qr':
+        if (vm.currentAccount == null) return;
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (ctx) => QrApprovalPage(
+              account: vm.currentAccount!,
+              repository: ctx.read<LoginApprovalRepository>(),
+            ),
+          ),
+        );
         break;
 
       case 'remove':

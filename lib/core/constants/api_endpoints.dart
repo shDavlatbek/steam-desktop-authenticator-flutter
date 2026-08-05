@@ -24,6 +24,18 @@ class ApiEndpoints {
   static const String authGenerateAccessTokenForApp =
       '$steamApiBase/IAuthenticationService/GenerateAccessTokenForApp/v1/';
 
+  // QR authentication.
+  // BeginAuthSessionViaQR starts a session this app displays as a QR code.
+  // GetAuthSessionInfo and UpdateAuthSessionWithMobileConfirmation are used
+  // when approving someone else's QR login; both require `?access_token=` on
+  // the query string, using an access token created with platform_type 3.
+  static const String authBeginSessionViaQR =
+      '$steamApiBase/IAuthenticationService/BeginAuthSessionViaQR/v1';
+  static const String authGetAuthSessionInfo =
+      '$steamApiBase/IAuthenticationService/GetAuthSessionInfo/v1';
+  static const String authUpdateWithMobileConfirmation =
+      '$steamApiBase/IAuthenticationService/UpdateAuthSessionWithMobileConfirmation/v1';
+
   // Two-factor service
   static const String twoFactorAddAuthenticator =
       '$steamApiBase/ITwoFactorService/AddAuthenticator/v1';

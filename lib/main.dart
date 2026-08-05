@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'app.dart';
 import 'core/repositories/account_repository.dart';
 import 'core/repositories/confirmation_repository.dart';
+import 'core/repositories/login_approval_repository.dart';
 import 'core/repositories/manifest_repository.dart';
 import 'core/services/steam_auth_service.dart';
 import 'core/services/steam_phone_service.dart';
@@ -31,6 +32,10 @@ void main() {
     web: webService,
     timeService: timeService,
   );
+  final loginApprovalRepo = LoginApprovalRepository(
+    web: webService,
+    accountRepo: accountRepo,
+  );
 
   runApp(
     MultiProvider(
@@ -43,6 +48,7 @@ void main() {
         Provider<ManifestRepository>.value(value: manifestRepo),
         Provider<AccountRepository>.value(value: accountRepo),
         Provider<ConfirmationRepository>.value(value: confirmationRepo),
+        Provider<LoginApprovalRepository>.value(value: loginApprovalRepo),
         ChangeNotifierProvider(create: (_) => ThemeNotifier(isDark: true)),
       ],
       child: const SdaApp(),

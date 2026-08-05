@@ -95,12 +95,34 @@ class SessionData {
     return bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
   }
 
+  /// Extracts the SteamID from a JWT's `sub` claim.
+  ///
+  /// QR logins never tell us the SteamID directly — PollAuthSessionStatus
+  /// returns only tokens and an account name — so it has to be read back out
+  /// of the token itself. Returns null if the token is malformed.
+  static int? steamIdFromToken(String token) {
+    final sub = _decodeTokenClaims(token)?['sub'];
+    if (sub == null) return null;
+    return int.tryParse(sub.toString());
+  }
+
   /// Decodes a JWT token's payload and extracts the 'exp' field as a [DateTime].
   /// Returns null if the token is malformed or missing the exp claim.
+  static DateTime? _getTokenExpirationTime(String token) {
+    final exp = _decodeTokenClaims(token)?['exp'];
+    if (exp == null) return null;
+
+    return DateTime.fromMillisecondsSinceEpoch(
+      (exp as int) * 1000,
+      isUtc: true,
+    );
+  }
+
+  /// Decodes a JWT payload into its claims map, or null if malformed.
   ///
   /// Handles base64url encoding: replaces '-' with '+', '_' with '/',
   /// and pads with '=' to a multiple of 4.
-  static DateTime? _getTokenExpirationTime(String token) {
+  static Map<String, dynamic>? _decodeTokenClaims(String token) {
     try {
       final parts = token.split('.');
       if (parts.length < 2) return null;
@@ -115,15 +137,7 @@ class SessionData {
       }
 
       final decoded = utf8.decode(base64Decode(payload));
-      final Map<String, dynamic> claims = jsonDecode(decoded);
-
-      final exp = claims['exp'];
-      if (exp == null) return null;
-
-      return DateTime.fromMillisecondsSinceEpoch(
-        (exp as int) * 1000,
-        isUtc: true,
-      );
+      return jsonDecode(decoded) as Map<String, dynamic>;
     } catch (_) {
       return null;
     }

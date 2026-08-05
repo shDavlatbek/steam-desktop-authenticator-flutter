@@ -6,6 +6,12 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
     <!-- Scoped storage file access (API 30+) -->
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"/>
+    <!-- Camera for scanning Steam login QR codes. Optional so the app still
+         installs on devices without one; the QR screen falls back to pasting
+         the login link. -->
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-feature android:name="android.hardware.camera" android:required="false"/>
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false"/>
     <application
         android:requestLegacyExternalStorage="true"
         android:label="Steam Authenticator"

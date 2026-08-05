@@ -263,6 +263,9 @@ All JSON keys match the C# version exactly, ensuring cross-compatibility.
 | `IAuthenticationService/PollAuthSessionStatus/v1` | Poll login result | POST |
 | `IAuthenticationService/UpdateAuthSessionWithSteamGuardCode/v1` | Submit 2FA code | POST |
 | `IAuthenticationService/GenerateAccessTokenForApp/v1` | Refresh access token | POST |
+| `IAuthenticationService/BeginAuthSessionViaQR/v1` | Start a QR login (this app shows the code) | POST |
+| `IAuthenticationService/GetAuthSessionInfo/v1` | Inspect a scanned login request | POST (`?access_token=`) |
+| `IAuthenticationService/UpdateAuthSessionWithMobileConfirmation/v1` | Approve/deny a scanned login | POST (`?access_token=`) |
 | `IPhoneService/AccountPhoneStatus/v1` | Check phone status | POST |
 | `IPhoneService/SetAccountPhoneNumber/v1` | Add phone number | POST |
 | `IPhoneService/VerifyAccountPhoneWithCode/v1` | Verify SMS code | POST |

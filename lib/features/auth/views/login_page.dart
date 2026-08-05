@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'package:sda_flutter/core/models/session_data.dart';
 import 'package:sda_flutter/core/models/steam_guard_account.dart';
 import 'package:sda_flutter/core/services/steam_auth_service.dart';
 import 'package:sda_flutter/core/services/steam_time_service.dart';
 import 'package:sda_flutter/features/auth/view_models/login_view_model.dart';
+import 'package:sda_flutter/features/auth/views/qr_login_page.dart';
 import 'package:sda_flutter/shared/theme/colors.dart';
 
 /// Login screen that drives the Steam credential-based auth flow.
@@ -94,6 +96,33 @@ class _LoginPageState extends State<LoginPage> {
       _usernameController.text,
       _passwordController.text,
     );
+  }
+
+  /// Runs the QR flow and, on success, pops this page with the resulting
+  /// session so callers see the same result as a password login.
+  Future<void> _handleQrLogin() async {
+    final session = await Navigator.push<SessionData>(
+      context,
+      MaterialPageRoute(builder: (_) => const QrLoginPage()),
+    );
+    if (session == null || !mounted) return;
+
+    // A QR login authenticates whichever account approved it, which need not
+    // be the account being refreshed. Saving the wrong tokens over an existing
+    // account would silently break it, so reject a mismatch.
+    final expectedSteamId = widget.account?.session?.steamID;
+    if (expectedSteamId != null &&
+        expectedSteamId != 0 &&
+        expectedSteamId != session.steamID) {
+      _showErrorSnackBar(
+        'That code approved a different Steam account '
+        '(${session.steamID}). Sign in with '
+        '${widget.account?.accountName ?? 'this account'} instead.',
+      );
+      return;
+    }
+
+    Navigator.of(context).pop(session);
   }
 
   void _showCodeDialog({required bool isEmail}) {
@@ -272,6 +301,34 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                             )
                           : const Text('Login'),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // QR login alternative
+                  Row(
+                    children: [
+                      const Expanded(child: Divider()),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Text(
+                          'or',
+                          style: TextStyle(
+                            color: SteamColors.textSecondary,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                      const Expanded(child: Divider()),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    height: 48,
+                    child: OutlinedButton.icon(
+                      onPressed: _isLoading ? null : _handleQrLogin,
+                      icon: const Icon(Icons.qr_code_2),
+                      label: const Text('Sign in with QR code'),
                     ),
                   ),
                   const SizedBox(height: 16),
