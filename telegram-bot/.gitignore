@@ -1,0 +1,11 @@
+.env
+data/
+*.maFile
+manifest.json
+shares.json
+
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/

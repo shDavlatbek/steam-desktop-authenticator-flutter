@@ -1,0 +1,123 @@
+{
+  "inputs": {
+    "shared_secret": "AQIDBAUGBwgJCgsMDQ4PEBESExQ=",
+    "identity_secret": "FBUWFxgZGhscHR4fICEiIyQlJic="
+  },
+  "totp": [
+    {
+      "time": 0,
+      "code": "6KR59"
+    },
+    {
+      "time": 1,
+      "code": "6KR59"
+    },
+    {
+      "time": 29,
+      "code": "6KR59"
+    },
+    {
+      "time": 30,
+      "code": "DW55B"
+    },
+    {
+      "time": 31,
+      "code": "DW55B"
+    },
+    {
+      "time": 1700000000,
+      "code": "3M9KK"
+    },
+    {
+      "time": 1234567890,
+      "code": "79RVY"
+    },
+    {
+      "time": 2000000000,
+      "code": "PMG8G"
+    }
+  ],
+  "confirmation_hash": [
+    {
+      "time": 1700000000,
+      "tag": "conf",
+      "hash": "lR%2BPURIgMKUdXB8GMBiPfrdcqCU%3D"
+    },
+    {
+      "time": 1700000000,
+      "tag": "accept",
+      "hash": "FUUbgMPOSpvZ%2F5nPqeekBP7kCs4%3D"
+    },
+    {
+      "time": 1700000000,
+      "tag": "reject",
+      "hash": "v2muMHvZbctTdYhETQ7Ku62MlqA%3D"
+    },
+    {
+      "time": 1234567890,
+      "tag": "conf",
+      "hash": "m%2BIqkH0WsULf1Jqk14CZVp2tQe4%3D"
+    },
+    {
+      "time": 1700000000,
+      "tag": "a-very-long-tag-that-exceeds-the-limit-abcdef",
+      "hash": "WPfQGu%2Bg2vmD8k%2F6dXRMjVmbq9k%3D"
+    }
+  ],
+  "mobile_signature": [
+    {
+      "version": 1,
+      "client_id": "2207813151333862682",
+      "steam_id": "76561198123456789",
+      "signature": "nMNuB0m4sKAhjDKpzHSU8EvfmZKiyeEu8VlszdCKMoQ="
+    },
+    {
+      "version": 2,
+      "client_id": "1",
+      "steam_id": "76561198123456789",
+      "signature": "wSb9mKYf/qzWjLEyfOqy70vCZ3msJTsuX5JCyFrQSvg="
+    },
+    {
+      "version": 0,
+      "client_id": "0",
+      "steam_id": "0",
+      "signature": "XMQQQNpvLy3KwiCNcsoxGPf08MJ4sRPMHecnXoOom4k="
+    },
+    {
+      "version": 65535,
+      "client_id": "18446744073709551615",
+      "steam_id": "18446744073709551615",
+      "signature": "784BfPbU29ymg8+xqUFyeme/fNrMb0nOfcdogN0+0d0="
+    }
+  ],
+  "file_encryption": [
+    {
+      "password": "hunter2",
+      "salt": "AQIDBAUGBwg=",
+      "iv": "AQIDBAUGBwgJCgsMDQ4PEA==",
+      "plaintext": "{\"shared_secret\":\"abc\"}",
+      "ciphertext": "pij8B6qQgH35Mi61gbweXPegtY6vaQeJyTGO1jbJp3g="
+    },
+    {
+      "password": "p@ssw0rd with spaces",
+      "salt": "AQIDBAUGBwg=",
+      "iv": "AQIDBAUGBwgJCgsMDQ4PEA==",
+      "plaintext": "short",
+      "ciphertext": "y1bZHcXH725DX5DxAWduLw=="
+    },
+    {
+      "password": "unicode-ключ",
+      "salt": "AQIDBAUGBwg=",
+      "iv": "AQIDBAUGBwgJCgsMDQ4PEA==",
+      "plaintext": "Ünïcödé påylöad 🎮",
+      "ciphertext": "PD5wMzChAOLNoIKcVCgBQKfJogB7U4iZqWppTmxalck="
+    },
+    {
+      "password": "blocktest",
+      "salt": "AQIDBAUGBwg=",
+      "iv": "AQIDBAUGBwgJCgsMDQ4PEA==",
+      "plaintext": "0123456789abcdef",
+      "ciphertext": "XJVMhV9Sve5fg1G4ItuD+RuSWSUyKNaoena0JpY/lys="
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+aiogram==3.30.0
+aiohttp>=3.9.0
+cryptography>=44.0.0
+# Headless build: no GUI libs needed on a server, and it ships prebuilt wheels
+# so there is no native zbar dependency to install.
+opencv-python-headless>=4.10.0
+numpy>=1.26.0
+python-dotenv>=1.0.1
+
+# Tests
+pytest>=8.3.0
+pytest-asyncio>=0.24.0
